@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Module — CRM</title>
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/styles.css?v=3">
+  
+  <script>
+    (function() {
+      try {
+        var rawDark = localStorage.getItem('auracare_dark_mode');
+        var isDarkMode = rawDark === null ? true : (rawDark === 'true');
+        if (isDarkMode) {
+          document.documentElement.classList.add('dark-theme');
+          document.body.classList.add('dark-theme');
+        } else {
+          document.documentElement.classList.remove('dark-theme');
+          document.body.classList.remove('dark-theme');
+        }
+
+        var custom = localStorage.getItem('auracare_custom_theme_colors');
+        var themeName = 'sky-aqua';
+        if (custom) {
+          var parsed = JSON.parse(custom);
+          if (parsed['--active-uiux-theme']) {
+            themeName = parsed['--active-uiux-theme'];
+          }
+          Object.keys(parsed).forEach(function(varName) {
+            document.documentElement.style.setProperty(varName, parsed[varName]);
+          });
+        }
+        if (themeName === 'sky-aqua') {
+          document.documentElement.classList.add('sky-aqua-theme');
+          document.body.classList.add('sky-aqua-theme');
+        } else {
+          document.documentElement.classList.remove('sky-aqua-theme');
+          document.body.classList.remove('sky-aqua-theme');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  
+  <style>
+    /* Styling adjustments to match main dashboard */
+    body {
+      background: var(--bg-app) !important;
+      color: var(--text-main) !important;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .crud-panel {
+      padding: 30px;
+    }
+
+    .glass-card {
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+      margin-bottom: 24px;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 56, 82, 0.4);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 500px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Dynamic UIUX custom styles */
+    .form-control {
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 8px !important;
+      padding: 10px 14px !important;
+      font-size: 13px !important;
+      width: 100%;
+      box-sizing: border-box;
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    
+    .form-control:focus {
+      border-color: #0284c7 !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1) !important;
+      outline: none;
+    }
+  </style>
+</head>
+<body class="sky-aqua-theme dark-theme">
+
+  <div id="app" style="display: flex; min-height: 100vh;">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="sidebarEl">
+      <div class="brand-header">
+        <div class="brand-logo" style="background: none !important; box-shadow: none !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;">
+          <img src="logo.jpg" style="width: 100%; height: 100%; object-fit: cover; border-radius: 14px;" alt="Arfa Logo" id="sidebar-logo">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title" id="sidebar-title">Arfa</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu" id="sidebar-nav-menu">
+        <!-- Loaded Dynamically -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-live-status" style="margin-bottom: 10px;">
+          <div class="live-dot"></div>
+          <div>
+            <div style="font-size:11px; color:var(--sidebar-text); font-family:var(--font-mono);" id="sidebarDateTime"></div>
+          </div>
+        </div>
+        <a class="nav-item" href="./index.html" style="color: #ef4444 !important; background: rgba(239, 68, 68, 0.1);">
+          <i class="fas fa-sign-out-alt" style="color: #ef4444 !important;"></i>
+          Exit to Dashboard
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content" style="flex: 1; display: flex; flex-direction: column;">
+      <!-- Top Header Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <div>
+            <h1 class="page-title" id="currentPageTitle">Dynamic Page</h1>
+            <div class="page-subtitle" id="currentPageSubtitle">Custom Database module registry</div>
+          </div>
+        </div>
+
+        <div class="top-bar-right">
+          <!-- Live Clock -->
+          <div class="live-clock" id="liveClockDisplay">
+            <i class="fas fa-circle" style="color:#00d4aa; font-size:7px; animation:pulse 2s infinite;"></i>
+            <span id="clockTime">--:--:--</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- View Panel -->
+      <div class="crud-panel">
+        <div class="glass-card">
+          <!-- Dynamic Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:20px;">
+            <div>
+              <h2 id="card-module-title" style="font-size:18px; font-weight:700; margin:0; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-folder-open" id="card-module-icon"></i>
+                <span id="card-module-name">Registry Records</span>
+              </h2>
+              <p id="card-module-subtitle" style="font-size:12px; color:#64748b; margin:4px 0 0 0;"></p>
+            </div>
+            
+            <div style="display:flex; gap:12px; align-items:center;">
+              <input type="text" id="custom-search" class="form-control" placeholder="Search rows..." oninput="filterCustomRows(this.value)" style="width:200px; height:38px; padding:0 12px !important; font-size:12px;">
+              <button class="btn btn-primary" onclick="openCrudModal()" style="height:38px; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-plus"></i> Add Entry
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic CRUD Table -->
+          <div style="overflow-x:auto; border-radius:10px; border:1px solid var(--border); background:var(--bg-card);">
+            <table class="custom-table" style="margin:0;">
+              <thead id="custom-thead">
+                <!-- Loaded dynamically -->
+              </thead>
+              <tbody id="custom-tbody">
+                <tr>
+                  <td style="text-align:center; padding:40px; color:#64748b;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px; display:block; color:#0284c7;"></i>
+                    Initializing database records...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CRUD Modal -->
+  <div class="modal-overlay" id="crud-modal">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:14px; margin-bottom:20px;">
+        <h3 style="color:#083852; margin:0; font-size:16px; font-weight:700;" id="crud-modal-title">Add New Record</h3>
+        <button onclick="closeCrudModal()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:20px;">&times;</button>
+      </div>
+      <form id="crud-form" onsubmit="handleSaveRecord(event)">
+        <input type="hidden" id="crud-row-id">
+        <div id="modal-fields-container">
+          <!-- Loaded dynamically -->
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeCrudModal()" style="padding:10px 16px; font-size:12px;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="padding:10px 20px; font-size:12px;">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-box" style="max-width: 420px; font-family: 'Plus Jakarta Sans', sans-serif;">
+      <div id="printable-receipt-content" style="padding: 10px; color: #083852; background: #ffffff; border-radius: 8px;">
+        <!-- Header -->
+        <div style="text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 15px; margin-bottom: 15px;">
+          <h3 id="receipt-brand-name" style="margin: 0; font-size: 18px; font-weight: 800; color: #083852;">Arfa Nova Technology</h3>
+          <p id="receipt-brand-subtitle" style="margin: 4px 0 0 0; font-size: 11px; color: #64748b; text-transform: uppercase;">Medical Center Invoice</p>
+        </div>
+        
+        <!-- Info -->
+        <div style="font-size: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b;">Invoice ID:</span>
+            <strong id="receipt-id" style="color: #083852;">#1001</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b;">Date:</span>
+            <span id="receipt-date" style="color: #083852;">06/08/2026</span>
+          </div>
+        </div>
+        
+        <!-- Patient details -->
+        <div style="background: #f8fafc; border-radius: 8px; padding: 10px; font-size: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+          <div style="margin-bottom: 4px;">
+            <span style="color: #64748b;">Patient Name:</span>
+            <strong id="receipt-patient-name" style="color: #083852; float: right;">John Doe</strong>
+          </div>
+          <div>
+            <span style="color: #64748b;">Age:</span>
+            <strong id="receipt-patient-age" style="color: #083852; float: right;">35 Years</strong>
+          </div>
+        </div>
+        
+        <!-- Item Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+              <th style="text-align: left; padding: 6px 0; color: #64748b;">Description</th>
+              <th style="text-align: right; padding: 6px 0; color: #64748b;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="receipt-item-desc" style="padding: 8px 0; color: #083852;">Consultation Fees</td>
+              <td id="receipt-item-amount" style="text-align: right; padding: 8px 0; color: #083852;">₹500.00</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Total -->
+        <div style="border-top: 2px dashed #cbd5e1; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <span style="font-size: 13px; font-weight: 700; color: #083852;">Total Paid</span>
+          <strong id="receipt-total" style="font-size: 16px; color: #10b981;">₹500.00</strong>
+        </div>
+        
+        <!-- Footer -->
+        <div style="text-align: center; font-size: 10px; color: #64748b; margin-top: 10px;">
+          <span style="display: block;">Payment Method: <strong id="receipt-method" style="color:#083852;">UPI</strong></span>
+          <span style="display: block; margin-top: 4px;">Thank you for choosing us!</span>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeReceiptModal()" style="padding:8px 14px; font-size:12px;">Close</button>
+        <button class="btn class-print-btn btn-primary" onclick="printReceipt()" style="padding:8px 18px; font-size:12px; display:flex; align-items:center; gap:6px;">
+          <i class="fas fa-print"></i> Print Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" style="position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
+
+  <script>
+    // Simple toast helper
+    function showToast(title, msg, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.style.background = "#ffffff";
+      toast.style.borderLeft = "4px solid " + (type === "success" ? "#10b981" : type === "warning" ? "#f59e0b" : "#ef4444");
+      toast.style.borderRadius = "8px";
+      toast.style.padding = "14px 18px";
+      toast.style.color = "#083852";
+      toast.style.boxShadow = "0 10px 25px rgba(0,0,0,0.08)";
+      toast.style.fontSize = "13px";
+      toast.style.width = "280px";
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(20px)";
+      toast.style.transition = "all 0.3s ease";
+      toast.style.border = "1px solid #e2e8f0";
+      
+      toast.innerHTML = `
+        <div style="font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:6px;">
+          <i class="fas ${type==='success'?'fa-check-circle':type==='warning'?'fa-exclamation-circle':'fa-times-circle'}" style="color:${type==='success'?'#10b981':type==='warning'?'#f59e0b':'#ef4444'}"></i>
+          ${title}
+        </div>
+        <div style="color:#64748b; font-size:12px;">${msg}</div>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      }, 50);
+      
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Live Clock & Time
+    function startClock() {
+      const clockSpan = document.getElementById("clockTime");
+      const sidebarTime = document.getElementById("sidebarDateTime");
+      
+      function update() {
+        const d = new Date();
+        if (clockSpan) clockSpan.innerText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (sidebarTime) sidebarTime.innerText = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      update();
+      setInterval(update, 1000);
+    }
+  </script>
+
+  <!-- Loader Script -->
+  <script src="js/custom-page.js?v=3"></script>
+</body>
+</html>
