@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" class="dark-theme">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Branding & Modules — Admin Console</title>
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="./css/styles.css?v=7777777">
+  
+  <style>
+    body {
+      background: #17171e !important;
+      color: #f3f6f9 !important;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Premium Sidebar styles matching the screenshot */
+    .sidebar-admin {
+      width: 260px;
+      background: #111117;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 24px 0;
+      flex-shrink: 0;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: rgba(255, 255, 255, 0.5);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .menu-item:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .menu-item.active {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid #00d4aa;
+      padding-left: 17px;
+    }
+
+    .container-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    @media (min-width: 1200px) {
+      .container-layout {
+        grid-template-columns: 1.1fr 1fr;
+      }
+    }
+
+    .glass-card {
+      background: #1a1a24;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    .glass-card h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group label {
+      color: #94a3b8;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .form-control {
+      background: #1e1e28 !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      color: #f3f6f9 !important;
+      border-radius: 8px !important;
+      padding: 12px 14px !important;
+      font-size: 13px !important;
+      transition: all 0.3s ease !important;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-control:focus {
+      border-color: #00d4aa !important;
+      box-shadow: 0 0 15px rgba(0, 212, 170, 0.15) !important;
+      background: #1e1e28 !important;
+      outline: none !important;
+    }
+
+    .custom-file-upload {
+      border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+      border-radius: 8px !important;
+      padding: 12px 14px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      cursor: pointer !important;
+      background: #1e1e28 !important;
+      transition: all 0.2s ease !important;
+      color: #94a3b8 !important;
+      font-size: 13px !important;
+      font-weight: 600;
+      box-sizing: border-box !important;
+    }
+    
+    .custom-file-upload:hover {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border-color: #00d4aa !important;
+      color: #ffffff !important;
+    }
+    
+    .custom-file-upload i {
+      font-size: 16px !important;
+      color: #00d4aa !important;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d4aa 0%, #0284c7 100%) !important;
+      border: none !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      padding: 14px 20px !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      font-size: 13px !important;
+      box-shadow: 0 8px 20px rgba(0, 212, 170, 0.15) !important;
+      transition: all 0.3s ease !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 12px 25px rgba(0, 212, 170, 0.25) !important;
+    }
+
+    .page-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .page-list-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .page-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .page-icon-wrapper {
+      width: 36px;
+      height: 36px;
+      background: rgba(0, 212, 170, 0.08);
+      color: #00d4aa;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .page-title-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .page-subtitle-text {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .btn-action {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 13.5px;
+      padding: 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+    }
+
+    .btn-danger-hover:hover {
+      color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.08) !important;
+    }
+
+    /* Switch Style */
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.08);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: #ffffff;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #00d4aa;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .badge-custom {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 500px;
+      background: #181824;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app" style="display: flex; min-height: 100vh;">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar-admin">
+      <!-- Brand Logo & Name -->
+      <div style="padding: 0 24px 20px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px dashed rgba(255,255,255,0.06);">
+        <img src="logo.jpg" alt="Logo" id="sidebar-brand-logo" style="width: 38px; height: 38px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+        <span id="sidebar-brand-name" style="font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Arfa Nova</span>
+      </div>
+
+      <!-- User Profile Card -->
+      <div style="display: flex; flex-direction: column; align-items: center; padding: 24px; text-align: center;">
+        <div style="position: relative; width: 76px; height: 76px; margin-bottom: 12px;">
+          <img src="logo.jpg" id="profile-avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #00d4aa; box-shadow: 0 0 15px rgba(0, 212, 170, 0.25);">
+        </div>
+        <h3 style="font-size: 14.5px; font-weight: 700; color: #ffffff; margin: 0;">Master Admin</h3>
+        <p style="font-size: 10px; color: #00d4aa; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin: 4px 0 0 0;">Control Console</p>
+        
+        <!-- Social/Action icons shortcut -->
+        <div style="display: flex; gap: 14px; margin-top: 14px; color: rgba(255,255,255,0.4); font-size: 13px;">
+          <a href="./index.html" target="_blank" title="Launch Hospital App" style="color: inherit; transition: color 0.2s;"><i class="fas fa-external-link-alt"></i></a>
+          <a href="./super-admin-db.html" title="Database Explorer" style="color: inherit; transition: color 0.2s;"><i class="fas fa-database"></i></a>
+          <a href="./super-admin.html" title="System Settings" style="color: inherit; transition: color 0.2s;"><i class="fas fa-cog"></i></a>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav style="display: flex; flex-direction: column; gap: 4px; padding: 0 12px; flex: 1; margin-top: 10px;">
+        <a href="./super-admin.html" class="menu-item active" id="menu-branding">
+          <i class="fas fa-palette"></i> Branding & Modules
+        </a>
+        <a href="./super-admin-create.html" class="menu-item" id="menu-create">
+          <i class="fas fa-tools"></i> Create Module
+        </a>
+        <a href="./super-admin-db.html" class="menu-item" id="menu-db">
+          <i class="fas fa-database"></i> Database Explorer
+        </a>
+        
+        <div style="border-top: 1px dashed rgba(255,255,255,0.06); margin: 15px 0; padding-top: 15px;">
+          <span style="font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding-left: 20px; display: block; margin-bottom: 8px;">Support</span>
+          <a href="./index.html" target="_blank" class="menu-item" style="color: #38bdf8 !important;">
+            <i class="fas fa-rocket"></i> Launch Hospital App
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- RIGHT MAIN CONTENT PANEL -->
+    <main style="flex: 1; background: #17171e; display: flex; flex-direction: column; overflow-y: auto;">
+      
+      <!-- Top Header -->
+      <header style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid rgba(255,255,255,0.03); background: #111117;">
+        <div>
+          <h2 id="page-display-title" style="font-size: 18px; font-weight: 700; color: #ffffff; margin: 0;">Branding & Modules</h2>
+        </div>
+        
+        <!-- Decorative Search Pill from screenshot -->
+        <div style="position: relative; width: 340px;">
+          <i class="fas fa-search" style="position: absolute; left: 16px; top: 12px; color: rgba(255,255,255,0.3); font-size: 12px;"></i>
+          <input type="text" placeholder="Search..........." disabled style="width: 100%; background: #1a1a24; border: 1px solid rgba(255,255,255,0.05); color: #ffffff; border-radius: 20px; padding: 8px 16px 8px 38px; font-size: 12px; font-family: inherit;">
+        </div>
+
+        <!-- Right Bell and Avatar -->
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <div style="position: relative; cursor: pointer;">
+            <i class="far fa-bell" style="font-size: 18px; color: rgba(255,255,255,0.6);"></i>
+            <span style="position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%;"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Body Content -->
+      <div style="padding: 40px;" class="container-layout">
+        
+        <!-- Left Card: White-Label Branding -->
+        <div class="glass-card">
+          <h2><i class="fas fa-palette" style="color:#00d4aa;"></i> White-Label Branding</h2>
+          <form id="branding-form" onsubmit="handleSaveBranding(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; margin-bottom: 16px;">
+              <div class="form-group">
+                <label>Software Name</label>
+                <input type="text" id="brand-software-name" class="form-control" placeholder="Arfa Nova Technology" required>
+              </div>
+              <div class="form-group">
+                <label>Sub-heading / Tagline</label>
+                <input type="text" id="brand-software-subtitle" class="form-control" placeholder="Next-Gen Health Ecosystem" required>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-bottom: 16px;">
+              <div class="form-group">
+                <label>Logo File Upload (PNG/JPG/SVG/WEBP)</label>
+                <label class="custom-file-upload" id="file-upload-label" style="height: 45px; display: flex; align-items: center; justify-content: center;">
+                  <i class="fas fa-cloud-upload-alt"></i> <span id="file-upload-text">Choose image file...</span>
+                  <input type="file" id="brand-logo-file" accept="image/*" onchange="handleLogoUpload(this)" style="display: none;">
+                </label>
+              </div>
+              <div class="form-group">
+                <label>Logo Path / URL (Auto-set on upload)</label>
+                <input type="text" id="brand-logo-url" class="form-control" placeholder="logo.jpg" readonly>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%;">
+              <i class="fas fa-save"></i> Save Branding Settings
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Card: Module Manager -->
+        <div class="glass-card">
+          <h2><i class="fas fa-cubes" style="color:#00d4aa;"></i> Application Modules</h2>
+          <div style="max-height: 520px; overflow-y: auto; padding-right: 4px;" id="modules-list">
+            <div style="text-align: center; padding: 40px;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 28px; color: #00d4aa;"></i>
+              <p style="margin-top: 12px; color: #94a3b8;">Loading operational modules...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Module Modal -->
+  <div class="modal-overlay" id="edit-module-modal">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="color:#ffffff; margin:0;"><i class="fas fa-edit" style="color:#00d4aa; margin-right:8px;"></i> Rename Module</h3>
+        <button onclick="closeEditModal()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:18px;">&times;</button>
+      </div>
+      <form id="edit-module-form" onsubmit="handleSaveRename(event)">
+        <input type="hidden" id="edit-module-key">
+        <input type="hidden" id="edit-module-visibility">
+        <div class="form-group" style="margin-bottom:20px;">
+          <label>Module Title / Nav Label</label>
+          <input type="text" id="edit-module-title" class="form-control" style="width:100%; box-sizing:border-box;" required>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" style="position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
+
+  <script>
+    // Inline simple toast helper
+    function showToast(title, msg, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.style.background = "rgba(17, 24, 39, 0.95)";
+      toast.style.borderLeft = "4px solid " + (type === "success" ? "#00d4aa" : type === "warning" ? "#f59e0b" : "#ef4444");
+      toast.style.borderTop = "1px solid rgba(255,255,255,0.08)";
+      toast.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+      toast.style.borderRight = "1px solid rgba(255,255,255,0.08)";
+      toast.style.borderRadius = "8px";
+      toast.style.padding = "14px 18px";
+      toast.style.color = "#ffffff";
+      toast.style.boxShadow = "0 10px 25px rgba(0,0,0,0.3)";
+      toast.style.fontSize = "13px";
+      toast.style.width = "280px";
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(20px)";
+      toast.style.transition = "all 0.3s ease";
+      
+      toast.innerHTML = `
+        <div style="font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:6px;">
+          <i class="fas ${type==='success'?'fa-check-circle':type==='warning'?'fa-exclamation-circle':'fa-times-circle'}" style="color:${type==='success'?'#00d4aa':type==='warning'?'#f59e0b':'#ef4444'}"></i>
+          ${title}
+        </div>
+        <div style="color:#94a3b8; font-size:12px;">${msg}</div>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      }, 50);
+      
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+  <script src="./js/super-admin.js?v=7777777"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Enable CORS and Proper MIME Types for Hostinger Deployment
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType text/css .css
+    AddType application/javascript .js
+    AddType image/jpeg .jpg .jpeg
+    AddType image/png .png
+    AddType image/svg+xml .svg
+</IfModule>
+
+# Directory Index setup for Subfolders
+DirectoryIndex index.html
