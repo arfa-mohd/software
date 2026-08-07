@@ -2844,8 +2844,8 @@ async function checkNewWhatsAppBookings() {
     // - DOCTOR Login: Manual OPD + WhatsApp Bookings
     // - STAFF Login: WhatsApp Bookings ONLY (Exclude Manual)
     const filteredBookings = appts.filter(a => {
-      const isToday = (a.appointment_date === todayStr || a.date === todayStr);
-      if (!isToday) return false;
+      const isTodayOrFuture = (a.appointment_date >= todayStr || a.date >= todayStr);
+      if (!isTodayOrFuture) return false;
 
       const isManual = (
         (a.patient_email && (a.patient_email.includes('manual') || a.patient_email === 'manual.opd@auracare.ai')) ||
