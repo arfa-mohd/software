@@ -73,7 +73,21 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 if not os.path.exists(STATIC_DIR):
     os.makedirs(STATIC_DIR)
 
+CSS_DIR = os.path.join(STATIC_DIR, "css")
+JS_DIR = os.path.join(STATIC_DIR, "js")
+if os.path.exists(CSS_DIR):
+    app.mount("/css", StaticFiles(directory=CSS_DIR), name="css")
+if os.path.exists(JS_DIR):
+    app.mount("/js", StaticFiles(directory=JS_DIR), name="js")
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.get("/logo.jpg")
+def get_logo():
+    logo_file = os.path.join(STATIC_DIR, "logo.jpg")
+    if os.path.exists(logo_file):
+        return FileResponse(logo_file)
+    return Response(status_code=404)
 
 @app.get("/")
 def read_root():
@@ -85,8 +99,12 @@ def read_root():
 @app.exception_handler(404)
 def custom_404_handler(request: Request, exc):
     index_file = os.path.join(STATIC_DIR, "index.html")
-    if request.url.path.startswith("/api"):
+    path = request.url.path
+    # Don't serve index.html for API or static asset requests
+    if path.startswith("/api"):
         return JSONResponse({"detail": "API endpoint not found"}, status_code=404)
+    if path.startswith("/css") or path.startswith("/js") or path.startswith("/static") or path.startswith("/logo"):
+        return JSONResponse({"detail": "Static file not found"}, status_code=404)
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return JSONResponse({"detail": "Not found"}, status_code=404)
