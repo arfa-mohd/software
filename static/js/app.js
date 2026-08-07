@@ -2404,10 +2404,6 @@ async function loadWhatsAppBookedPatients(page = 1) {
     const filterInput = document.getElementById("waDateFilter");
     let targetDate = "";
     if (filterInput) {
-      if (!filterInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        filterInput.value = today;
-      }
       targetDate = filterInput.value;
     }
 
