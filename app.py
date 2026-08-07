@@ -91,22 +91,10 @@ def get_logo():
 
 @app.get("/")
 def read_root():
-    index_file = os.path.join(STATIC_DIR, "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
     return {"message": "AuraCare AI Platform Backend API Running v3.0.0"}
 
 @app.exception_handler(404)
 def custom_404_handler(request: Request, exc):
-    index_file = os.path.join(STATIC_DIR, "index.html")
-    path = request.url.path
-    # Don't serve index.html for API or static asset requests
-    if path.startswith("/api"):
-        return JSONResponse({"detail": "API endpoint not found"}, status_code=404)
-    if path.startswith("/css") or path.startswith("/js") or path.startswith("/static") or path.startswith("/logo"):
-        return JSONResponse({"detail": "Static file not found"}, status_code=404)
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
     return JSONResponse({"detail": "Not found"}, status_code=404)
 
 if __name__ == "__main__":
