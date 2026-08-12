@@ -378,12 +378,21 @@ async function loadSidebarMenu() {
   if (customPages.length > 0) {
     html += `<div class="nav-section-title">Custom Modules</div>`;
     customPages.forEach(p => {
-      html += `
-        <a class="nav-item" id="nav-${p.key}" href="/static/custom-page.html?page=${p.key}">
-          <i class="${p.icon}"></i>
-          ${p.title}
-        </a>
-      `;
+      if (p.key === 'pos_billing') {
+        html += `
+          <a class="nav-item" id="nav-pos_billing" onclick="switchView('pos_billing')">
+            <i class="${p.icon || 'fas fa-cash-register'}"></i>
+            ${p.title}
+          </a>
+        `;
+      } else {
+        html += `
+          <a class="nav-item" id="nav-${p.key}" href="/static/custom-page.html?page=${p.key}">
+            <i class="${p.icon}"></i>
+            ${p.title}
+          </a>
+        `;
+      }
     });
   }
 
@@ -492,6 +501,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { loadPaymentsData(); } catch(e){}
   try { loadPatientsList(); } catch(e){}
   try { initNotificationEngine(); } catch(e){}
+  try { initDateFilters(); } catch(e){}
+  try { initPosBilling(); } catch(e){}
 });
 
 // View Navigation Switcher
@@ -529,6 +540,7 @@ function switchView(viewId) {
     const titles = {
       'dashboard': 'Dashboard',
       'whatsapp': 'WhatsApp Patients',
+      'wa_broadcast': 'WhatsApp Campaign Studio',
       'triage': 'AI Symptom Triage',
       'queue': 'OPD Reservations',
       'patients': 'Patient EMR',
@@ -539,12 +551,14 @@ function switchView(viewId) {
       'lab': 'Lab Diagnostics',
       'pharmacy': 'Pharmacy Stock',
       'settings': 'Theme Settings',
+      'pos_billing': 'Point of Sale Billing & Invoices',
       'payments': 'Financials',
       'admin': 'Admin & Staff Management'
     };
     const subtitles = {
       'dashboard': 'Hospital Intelligence Overview',
       'whatsapp': 'WhatsApp-Booked Patient Queue',
+      'wa_broadcast': 'Auto Share Poster & Video Advertisement to All OPD & WhatsApp Clients',
       'triage': 'AI Risk Assessment & Symptom Analysis',
       'queue': 'Live OPD Queue Board & Appointments',
       'patients': 'Electronic Medical Records',
@@ -554,6 +568,7 @@ function switchView(viewId) {
       'lab': 'Pathology & Diagnostic Reports',
       'pharmacy': 'Inventory & Dispensing Control',
       'settings': 'Customize Dashboard Design & Colors',
+      'pos_billing': 'Point of Sale Counter Billing, Quick Medicine & Service Invoice Generator',
       'payments': 'Revenue, Gateways & Financial Log',
       'admin': 'Manage staff, doctors, roles, user accounts, activity logs, attendance & security'
     };
@@ -575,6 +590,8 @@ function switchView(viewId) {
     if (typeof loadKpis === 'function') loadKpis();
   } else if (viewId === 'whatsapp') {
     if (typeof loadWhatsAppBookedPatients === 'function') loadWhatsAppBookedPatients();
+  } else if (viewId === 'wa_broadcast') {
+    if (typeof loadWhatsAppCampaignAudience === 'function') loadWhatsAppCampaignAudience();
   } else if (viewId === 'queue') {
     if (typeof loadQueueData === 'function') loadQueueData();
   } else if (viewId === 'patients') {
@@ -1267,18 +1284,22 @@ const themePresets = {
 };
 
 function initTheme() {
-  // Version-key approach: if stored version != current, wipe old theme
-  const THEME_VERSION = 'nexus-v5-saas-light';
+  const THEME_VERSION = 'nexus-v6-dark-mode-default';
   const storedVersion = localStorage.getItem('auracare_theme_version');
   
   if (storedVersion !== THEME_VERSION) {
-    // First time on new version — clear any old saved theme
     localStorage.removeItem('auracare_custom_theme');
     localStorage.setItem('auracare_theme_version', THEME_VERSION);
+    localStorage.setItem('auracare_dark_mode', 'true');
+    document.body.classList.add('dark-theme');
+    document.documentElement.classList.add('dark-theme');
     applyTheme(customTheme);
-    console.log('[AuraCare Nexus v3] Fresh dark theme applied.');
+    console.log('[AuraCare Nexus] Dark mode default applied.');
     return;
   }
+
+  document.body.classList.add('dark-theme');
+  document.documentElement.classList.add('dark-theme');
 
   const saved = localStorage.getItem('auracare_custom_theme');
   if (saved) {
@@ -1771,7 +1792,7 @@ function renderPatientsTable(list, page = 1) {
       <td>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-sm btn-blue" style="padding:4px 8px; font-size:12px;" onclick="openEditPatientModal(${p.id})"><i class="fas fa-edit"></i> Edit</button>
-          <button class="btn btn-sm btn-red" style="padding:4px 8px; font-size:12px; background:var(--status-red); border-color:var(--status-red);" onclick="deletePatient(${p.id})"><i class="fas fa-trash"></i> Delete</button>
+          <button class="btn btn-sm btn-red" style="padding:5px 10px; font-size:12px; background:#ef4444 !important; color:#ffffff !important; border:none !important; border-radius:6px; cursor:pointer; font-weight:600;" onclick="deletePatient(${p.id})"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </td>
     </tr>
@@ -1954,9 +1975,14 @@ function renderLabTable(list, page = 1) {
         <td>${statusBadge}</td>
         <td><span style="font-size:12px; color:var(--text-muted); font-weight:600;">${b.result_summary}</span></td>
         <td style="text-align:right;">
-          <button class="btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="downloadLabReportPDF('${b.booking_code}', '${b.patient_name.replace(/'/g, "\\'")}', '${b.test_name.replace(/'/g, "\\'")}', '${b.result_summary.replace(/'/g, "\\'")}', '${b.date}')">
-            <i class="fas fa-file-pdf" style="color:#ef4444;"></i> Download PDF
-          </button>
+          <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+            <button class="btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="downloadLabReportPDF('${b.booking_code}', '${b.patient_name.replace(/'/g, "\\'")}', '${b.test_name.replace(/'/g, "\\'")}', '${b.result_summary.replace(/'/g, "\\'")}', '${b.date}')">
+              <i class="fas fa-file-pdf" style="color:#ef4444;"></i> Download PDF
+            </button>
+            <button class="btn btn-sm btn-red" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" onclick="deleteLabBooking(${b.id})">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -2043,6 +2069,23 @@ function downloadLabReportPDF(labRef, patientName, testName, summary, date) {
   printWindow.print();
 }
 
+async function deleteLabBooking(bookingId) {
+  if (!confirm("Are you sure you want to delete this lab booking? This action cannot be undone.")) return;
+  try {
+    const res = await fetch(`/api/lab/bookings/${bookingId}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert("🗑️ Lab booking deleted successfully!");
+      loadLabData();
+    } else {
+      const data = await res.json();
+      alert("Error: " + (data.detail || "Failed to delete lab booking"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Request failed to delete lab booking.");
+  }
+}
+
 // Pharmacy Stock Controller
 let allPharmacyData = [];
 
@@ -2120,7 +2163,14 @@ function renderPharmacyTable(list, page = 1) {
         <td>${stockBadge}</td>
         <td><strong style="color:var(--text-dark); font-size:13px;">₹${parseFloat(i.unit_price).toFixed(2)}</strong></td>
         <td><span style="font-size:12px; color:var(--text-muted);">${i.manufacturer}</span></td>
-        <td style="text-align:right;">${statusPill}</td>
+        <td style="text-align:right;">
+          <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+            ${statusPill}
+            <button class="btn btn-sm btn-red" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" onclick="deletePharmacyItem(${i.id})">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </td>
       </tr>
     `;
   }).join('');
@@ -2150,6 +2200,23 @@ function filterPharmacyTable() {
   });
 
   renderPharmacyTable(filtered);
+}
+
+async function deletePharmacyItem(itemId) {
+  if (!confirm("Are you sure you want to delete this pharmacy item? This action cannot be undone.")) return;
+  try {
+    const res = await fetch(`/api/pharmacy/items/${itemId}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert("🗑️ Pharmacy item deleted successfully!");
+      loadPharmacyData();
+    } else {
+      const data = await res.json();
+      alert("Error: " + (data.detail || "Failed to delete pharmacy item"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Request failed to delete pharmacy item.");
+  }
 }
 
 // Payments Management Controller & Gateways
@@ -2242,9 +2309,14 @@ function renderPaymentsTable(list, page = 1) {
         <td>${statusBadge}</td>
         <td><span style="font-size:12px; color:var(--text-muted);">${p.date}</span></td>
         <td style="text-align:right;">
-          <button class="btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="printPaymentReceipt('${p.transaction_ref}', '${p.patient_name.replace(/'/g, "\\'")}', '${p.amount}', '${p.payment_method.replace(/'/g, "\\'")}', '${p.date}', '${invId}')">
-            <i class="fas fa-print"></i> Receipt
-          </button>
+          <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+            <button class="btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="printPaymentReceipt('${p.transaction_ref}', '${p.patient_name.replace(/'/g, "\\'")}', '${p.amount}', '${p.payment_method.replace(/'/g, "\\'")}', '${p.date}', '${invId}')">
+              <i class="fas fa-print"></i> Receipt
+            </button>
+            <button class="btn btn-sm btn-red" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" onclick="deletePayment(${p.id})">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -2277,6 +2349,23 @@ function filterPaymentsTable() {
   });
 
   renderPaymentsTable(filtered);
+}
+
+async function deletePayment(paymentId) {
+  if (!confirm("Are you sure you want to delete this payment record? This action cannot be undone.")) return;
+  try {
+    const res = await fetch(`/api/payments/${paymentId}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert("🗑️ Payment record deleted successfully!");
+      loadPaymentsData();
+    } else {
+      const data = await res.json();
+      alert("Error: " + (data.detail || "Failed to delete payment"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Request failed to delete payment.");
+  }
 }
 
 async function submitQuickPayment() {
@@ -2461,7 +2550,7 @@ async function loadWhatsAppBookedPatients(page = 1) {
           <td>
             <div style="display:flex; gap:8px;">
               <button class="btn btn-sm btn-blue" style="padding:4px 8px; font-size:12px;" onclick="openEditApptModal(${a.id})"><i class="fas fa-edit"></i> Edit</button>
-              <button class="btn btn-sm btn-red" style="padding:4px 8px; font-size:12px; background:var(--status-red); border-color:var(--status-red);" onclick="deleteAppointment(${a.id})"><i class="fas fa-trash"></i> Delete</button>
+              <button class="btn btn-sm btn-red" style="padding:5px 10px; font-size:12px; background:#ef4444 !important; color:#ffffff !important; border:none !important; border-radius:6px; cursor:pointer; font-weight:600;" onclick="deleteAppointment(${a.id})"><i class="fas fa-trash"></i> Delete</button>
             </div>
           </td>
         </tr>
@@ -2521,6 +2610,39 @@ async function openAddBookingModal() {
 
 function closeAddApptModal() {
   document.getElementById("addAppointmentModal").classList.remove("active");
+}
+
+function clearAddApptForm() {
+  const fieldsToClear = [
+    "addApptPatientName", "addApptPatientAge", "addApptPatientPhone", "addApptSymptoms",
+    "pageAddApptPatientName", "pageAddApptAge", "pageAddApptPhone", "pageAddApptSymptoms"
+  ];
+  fieldsToClear.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  
+  // Reset selects to defaults
+  ["addApptPatientGender", "pageAddApptGender"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "Male";
+  });
+  ["addApptTimeSlot", "pageAddApptTime"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "10:00 AM";
+  });
+  
+  const today = new Date().toISOString().split('T')[0];
+  ["addApptDate", "pageAddApptDate"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = today;
+  });
+
+  // Reset doctor selects
+  ["addApptDoctorId", "pageAddApptDoctor"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.options.length > 0) el.selectedIndex = 0;
+  });
 }
 
 async function submitAddAppt() {
@@ -2587,6 +2709,9 @@ async function submitAddAppt() {
     if (res.ok && data.success) {
       alert("🎉 Appointment booking created successfully!");
       
+      // Clear form fields after success
+      clearAddApptForm();
+
       // Update table date filter to match the newly added booking's date
       const filterInput = document.getElementById("queueDateFilter");
       if (filterInput && payload.appointment_date) {
@@ -2750,14 +2875,12 @@ async function deleteAppointment(apptId) {
     const result = await res.json();
     if (res.ok) {
       alert("Booking deleted successfully!");
-      if (typeof loadQueueData === 'function') {
-        loadQueueData();
-      }
-      if (typeof loadWhatsAppBookedPatients === 'function') {
-        loadWhatsAppBookedPatients();
-      }
+      if (typeof loadQueueData === 'function') loadQueueData();
+      if (typeof loadWhatsAppBookedPatients === 'function') loadWhatsAppBookedPatients();
+      if (typeof loadPrescriptionsData === 'function') loadPrescriptionsData();
+      if (typeof loadDashboardData === 'function') loadDashboardData();
     } else {
-      alert("Error: " + (result.message || "Failed to delete booking"));
+      alert("Error: " + (result.detail || result.message || "Failed to delete booking"));
     }
   } catch (err) {
     console.error(err);
@@ -5482,3 +5605,364 @@ function stopFolderSync() {
   document.getElementById("sync-status-indicator").style.display = "none";
   showToast("Sync Disabled", "Scanner directory watching stopped.", "info");
 }
+
+/* ==========================================================================
+   DATE FILTER INITIALIZER (REQUIREMENT 1: TODAY'S DATE ONLY DEFAULT)
+   ========================================================================== */
+function initDateFilters() {
+  const today = new Date().toISOString().split('T')[0];
+  const dateInputIds = [
+    'waDateFilter', 'queueDateFilter', 'addApptDate', 
+    'pageAddApptDate', 'bookingDateInput', 'editApptDate',
+    'pageEditApptDate', 'addLabDate', 'pageAddLabSampleDate'
+  ];
+  
+  dateInputIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) {
+      el.value = today;
+    }
+  });
+}
+
+/* ==========================================================================
+   CREATE INVOICE POS BILLING MODULE (REQUIREMENT 3: MATCHING USER IMAGE 3)
+   ========================================================================== */
+const POS_PRODUCT_CATALOG = {
+  "Paracetamol 650mg (Dolo)": { hsn: "3004", rate: 15.00 },
+  "Amoxicillin 500mg": { hsn: "3004", rate: 65.00 },
+  "Metoprolol 25mg": { hsn: "3004", rate: 45.00 },
+  "Atorvastatin 10mg": { hsn: "3004", rate: 85.00 },
+  "Pantoprazole 40mg": { hsn: "3004", rate: 35.00 },
+  "Doctor Consultation Fee": { hsn: "9993", rate: 500.00 },
+  "ECG Diagnostics Test": { hsn: "9993", rate: 350.00 },
+  "Complete Blood Count (CBC)": { hsn: "9993", rate: 450.00 },
+  "Lipid Profile Test": { hsn: "9993", rate: 750.00 },
+  "X-Ray Chest PA View": { hsn: "9993", rate: 600.00 }
+};
+
+let posItems = [];
+let posBillCounter = 1;
+
+function getFormattedPosDateTime() {
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strHours = String(hours).padStart(2, '0');
+  
+  return `${day}-${month}-${year},${strHours}:${minutes} ${ampm}`;
+}
+
+function initPosBilling() {
+  const dtInput = document.getElementById("posDateTime");
+  if (dtInput) {
+    dtInput.value = getFormattedPosDateTime();
+    setInterval(() => {
+      if (document.getElementById("posDateTime")) {
+        document.getElementById("posDateTime").value = getFormattedPosDateTime();
+      }
+    }, 1000);
+  }
+
+  const billInput = document.getElementById("posBillNo");
+  if (billInput) {
+    billInput.value = String(posBillCounter).padStart(5, '0');
+  }
+
+  try { loadPosHistoryTable(); } catch(e){}
+}
+
+function onPosProductSelect() {
+  const searchVal = document.getElementById("posProductSearch")?.value?.trim();
+  if (searchVal && POS_PRODUCT_CATALOG[searchVal]) {
+    const item = POS_PRODUCT_CATALOG[searchVal];
+    const hsnEl = document.getElementById("posProductHsn");
+    const rateEl = document.getElementById("posProductRate");
+    if (hsnEl) hsnEl.value = item.hsn;
+    if (rateEl) rateEl.value = item.rate.toFixed(2);
+  }
+}
+
+function addPosItem() {
+  const nameInput = document.getElementById("posProductSearch");
+  const hsnInput = document.getElementById("posProductHsn");
+  const qtyInput = document.getElementById("posProductQty");
+  const rateInput = document.getElementById("posProductRate");
+
+  const name = nameInput?.value?.trim();
+  const hsn = hsnInput?.value?.trim() || "3004";
+  const qty = parseInt(qtyInput?.value) || 1;
+  const rate = parseFloat(rateInput?.value) || 0.00;
+
+  if (!name) {
+    alert("Please enter or select a Product Name.");
+    nameInput?.focus();
+    return;
+  }
+
+  const amount = qty * rate;
+  posItems.push({
+    id: Date.now() + Math.random(),
+    name,
+    hsn,
+    qty,
+    rate,
+    amount
+  });
+
+  // Reset product inputs
+  nameInput.value = "";
+  hsnInput.value = "";
+  qtyInput.value = "1";
+  rateInput.value = "";
+
+  renderPosTable();
+  calculatePosTotals();
+  nameInput.focus();
+}
+
+function deletePosItem(itemId) {
+  posItems = posItems.filter(item => item.id !== itemId);
+  renderPosTable();
+  calculatePosTotals();
+}
+
+function renderPosTable() {
+  const tbody = document.getElementById("posItemsTableBody");
+  if (!tbody) return;
+
+  if (posItems.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b; font-size: 13px;">
+          No products added yet. Search a product above and click <strong>ADD ITEM</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = posItems.map((item, idx) => `
+    <tr style="border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 13.5px;">
+      <td style="padding: 12px 16px; color: #94a3b8; font-weight: 600;">${idx + 1}</td>
+      <td style="padding: 12px 16px; font-weight: 600;">${item.name}</td>
+      <td style="padding: 12px 16px; color: #94a3b8; font-family: var(--font-mono);">${item.hsn}</td>
+      <td style="padding: 12px 16px; text-align: right; font-family: var(--font-mono);">${item.rate.toFixed(2)}</td>
+      <td style="padding: 12px 16px; text-align: center; font-weight: 700;">${item.qty}</td>
+      <td style="padding: 12px 16px; text-align: right; font-weight: 700; font-family: var(--font-mono); color: #10b981;">${item.amount.toFixed(2)}</td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <button type="button" class="pos-del-btn" onclick="deletePosItem(${item.id})">DEL</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function calculatePosTotals() {
+  const total = posItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalDisplay = document.getElementById("posTotalAmountDisplay");
+  if (totalDisplay) {
+    totalDisplay.innerText = total % 1 === 0 ? String(total) : total.toFixed(2);
+  }
+
+  const givenInput = document.getElementById("posGivenAmount");
+  const given = parseFloat(givenInput?.value) || 0;
+  const returnAmt = Math.max(0, given - total);
+
+  const returnDisplay = document.getElementById("posReturnAmountDisplay");
+  if (returnDisplay) {
+    returnDisplay.innerText = returnAmt.toFixed(2);
+  }
+}
+
+async function printPosBill() {
+  const customerName = document.getElementById("posCustomerName")?.value?.trim();
+  const customerMobile = document.getElementById("posCustomerMobile")?.value?.trim() || "";
+  const customerAddress = document.getElementById("posCustomerAddress")?.value?.trim() || "";
+  const paymentMethod = document.getElementById("posPaymentMethod")?.value || "CASH";
+  const billNo = document.getElementById("posBillNo")?.value || String(posBillCounter).padStart(5, '0');
+  const dateTimeStr = document.getElementById("posDateTime")?.value || getFormattedPosDateTime();
+
+  if (!customerName) {
+    alert("Please enter Customer Name.");
+    document.getElementById("posCustomerName")?.focus();
+    return;
+  }
+
+  if (posItems.length === 0) {
+    alert("Please add at least one Product item to the invoice before printing.");
+    document.getElementById("posProductSearch")?.focus();
+    return;
+  }
+
+  const totalAmount = posItems.reduce((sum, item) => sum + item.amount, 0);
+  const givenAmount = parseFloat(document.getElementById("posGivenAmount")?.value) || 0;
+  const returnAmount = Math.max(0, givenAmount - totalAmount);
+
+  // Save to backend database
+  try {
+    await fetch("/api/payments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        invoice_id: `INV-${billNo}`,
+        patient_name: customerName,
+        amount: totalAmount,
+        payment_method: paymentMethod
+      })
+    });
+  } catch (e) {
+    console.warn("API payment log notice:", e);
+  }
+
+  // Generate printable thermal / invoice receipt window
+  const printWindow = window.open('', '_blank', 'width=750,height=850');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Tax Invoice #${billNo} - AuraCare AI</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #f8fafc; color: #0f172a; }
+        .invoice-card { background: #ffffff; border-radius: 16px; padding: 32px; max-width: 650px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+        .brand { font-size: 24px; font-weight: 800; color: #0f172a; }
+        .brand span { color: #0284c7; }
+        .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; font-size: 13px; background: #f1f5f9; padding: 14px 18px; border-radius: 10px; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        .table th { background: #0f172a; color: #ffffff; padding: 10px 12px; text-align: left; }
+        .table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px 20px; width: 280px; margin-left: auto; font-size: 14px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .summary-row.total { font-weight: 800; font-size: 16px; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 4px; color: #0284c7; }
+        .btn-print { background: #ef4444; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; margin-top: 24px; width: 100%; text-transform: uppercase; }
+        @media print { .btn-print { display: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-card">
+        <div class="header">
+          <div class="brand">AuraCare <span>AI</span> Hospital</div>
+          <div class="subtitle">Multi-Specialty Super Specialty Medical Center & Research Institute</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">GSTIN: 33AAAAA0000A1Z5 • 24x7 Counter Helpline: +91 98765 43210</div>
+        </div>
+
+        <div style="text-align: center; font-weight: 800; font-size: 15px; color: #0f172a; margin-bottom: 16px; text-transform: uppercase;">
+          TAX INVOICE / CASH RECEIPT
+        </div>
+
+        <div class="meta-grid">
+          <div><strong>Bill No:</strong> ${billNo}</div>
+          <div><strong>Date & Time:</strong> ${dateTimeStr}</div>
+          <div><strong>Customer Name:</strong> ${customerName}</div>
+          <div><strong>Mobile:</strong> ${customerMobile || 'N/A'}</div>
+          <div><strong>Address:</strong> ${customerAddress || 'Counter Walk-in'}</div>
+          <div><strong>Payment Mode:</strong> ${paymentMethod}</div>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product Name</th>
+              <th>HSN</th>
+              <th style="text-align:right;">Rate</th>
+              <th style="text-align:center;">Qty</th>
+              <th style="text-align:right;">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${posItems.map((item, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${item.name}</strong></td>
+                <td>${item.hsn}</td>
+                <td style="text-align:right;">${item.rate.toFixed(2)}</td>
+                <td style="text-align:center;">${item.qty}</td>
+                <td style="text-align:right; font-weight:700;">${item.amount.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="summary-box">
+          <div class="summary-row total"><span>TOTAL AMOUNT:</span><span>₹${totalAmount.toFixed(2)}</span></div>
+          <div class="summary-row"><span>Given Amount:</span><span>₹${givenAmount.toFixed(2)}</span></div>
+          <div class="summary-row" style="color:#10b981; font-weight:700;"><span>Return Amount:</span><span>₹${returnAmount.toFixed(2)}</span></div>
+        </div>
+
+        <button class="btn-print" onclick="window.print()">Print Receipt</button>
+      </div>
+      <script>
+        setTimeout(() => { window.print(); }, 400);
+      </script>
+    </body>
+    </html>
+  `);
+
+  // Auto increment Bill No & clear form for next customer
+  posBillCounter++;
+  const nextBillNo = String(posBillCounter).padStart(5, '0');
+  const billInput = document.getElementById("posBillNo");
+  if (billInput) billInput.value = nextBillNo;
+
+  posItems = [];
+  document.getElementById("posCustomerName").value = "";
+  document.getElementById("posCustomerMobile").value = "";
+  document.getElementById("posCustomerAddress").value = "";
+  document.getElementById("posGivenAmount").value = "0";
+  renderPosTable();
+  calculatePosTotals();
+
+  // Reload payments log table underneath
+  try { await loadPaymentsData(); } catch (e) {}
+  try { await loadPosHistoryTable(); } catch (e) {}
+}
+
+async function loadPosHistoryTable() {
+  const tbody = document.getElementById("posHistoryTableBody");
+  if (!tbody) return;
+
+  try {
+    const res = await fetch("/api/payments");
+    const payments = await res.json();
+    
+    if (!payments || payments.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
+            No counter invoices issued yet.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = payments.slice(0, 15).map(p => `
+      <tr>
+        <td><strong style="font-family:var(--font-mono); color:var(--text-dark);">${p.invoice_id || 'INV-00001'}</strong></td>
+        <td><strong style="color:var(--text-dark);">${p.patient_name}</strong></td>
+        <td><span class="badge badge-blue">${p.payment_method}</span></td>
+        <td><strong style="color:#10b981; font-family:var(--font-mono);">₹${parseFloat(p.amount).toFixed(2)}</strong></td>
+        <td><span class="badge badge-green"><i class="fas fa-check-circle"></i> Paid</span></td>
+        <td style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">${p.timestamp}</td>
+        <td style="text-align:right;">
+          <button class="btn-secondary" onclick="printPaymentReceipt('${p.transaction_ref}', '${p.patient_name}', ${p.amount}, '${p.payment_method}', '${p.timestamp}', '${p.invoice_id}')" style="font-size:11px; padding:4px 10px;">
+            <i class="fas fa-print"></i> Print
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error("Error loading POS history table:", err);
+  }
+}
+

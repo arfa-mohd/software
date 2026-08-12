@@ -238,11 +238,26 @@ def update_patient(patient_id: int, req: PatientUpdate):
 
 @router.delete("/{patient_id}")
 def delete_patient(patient_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
-    conn.commit()
-    conn.close()
-    return {"status": "success", "message": "Patient deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT phone FROM patients WHERE id = ?", (patient_id,))
+        row = cursor.fetchone()
+        if row and row["phone"]:
+            phone = row["phone"]
+            cursor.execute("SELECT id FROM appointments WHERE patient_phone = ?", (phone,))
+            appts = cursor.fetchall()
+            for appt in appts:
+                cursor.execute("DELETE FROM prescriptions WHERE appointment_id = ?", (appt["id"],))
+            cursor.execute("DELETE FROM appointments WHERE patient_phone = ?", (phone,))
+            cursor.execute("DELETE FROM whatsapp_sessions WHERE phone_number = ?", (phone,))
+            cursor.execute("DELETE FROM whatsapp_messages WHERE phone_number = ?", (phone,))
+        cursor.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "Patient deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 

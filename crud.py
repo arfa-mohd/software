@@ -7,7 +7,7 @@ import database
 def get_user_by_email(email: str):
     conn = database.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -17,10 +17,10 @@ def create_user(email: str, password_hash: str, full_name: str, role: str = "Pat
     cursor = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute(
-        "INSERT INTO users (email, password_hash, full_name, role, phone, created_at) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+        "INSERT INTO users (email, password_hash, full_name, role, phone, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (email, password_hash, full_name, role, phone, now_str)
     )
-    user_id = cursor.fetchone()[0]
+    user_id = cursor.lastrowid
     conn.commit()
     conn.close()
     return user_id
@@ -38,7 +38,7 @@ def get_doctors(department_id: int = None):
     conn = database.get_db_connection()
     cursor = conn.cursor()
     if department_id:
-        cursor.execute("SELECT * FROM doctors WHERE department_id = %s", (department_id,))
+        cursor.execute("SELECT * FROM doctors WHERE department_id = ?", (department_id,))
     else:
         cursor.execute("SELECT * FROM doctors")
     rows = cursor.fetchall()
@@ -48,7 +48,7 @@ def get_doctors(department_id: int = None):
 def get_doctor_by_id(doctor_id: int):
     conn = database.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM doctors WHERE id = %s", (doctor_id,))
+    cursor.execute("SELECT * FROM doctors WHERE id = ?", (doctor_id,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -56,7 +56,7 @@ def get_doctor_by_id(doctor_id: int):
 def get_doctor_slots(doctor_id: int, date: str):
     conn = database.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM schedules WHERE doctor_id = %s AND date = %s", (doctor_id, date))
+    cursor.execute("SELECT * FROM schedules WHERE doctor_id = ? AND date = ?", (doctor_id, date))
     rows = cursor.fetchall()
     
     if not rows:
@@ -66,10 +66,10 @@ def get_doctor_slots(doctor_id: int, date: str):
             "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
         ]
         for slot in standard_slots:
-            cursor.execute("INSERT INTO schedules (doctor_id, date, time_slot, is_booked) VALUES (%s, %s, %s, 0)",
+            cursor.execute("INSERT INTO schedules (doctor_id, date, time_slot, is_booked) VALUES (?, ?, ?, 0)",
                            (doctor_id, date, slot))
         conn.commit()
-        cursor.execute("SELECT * FROM schedules WHERE doctor_id = %s AND date = %s", (doctor_id, date))
+        cursor.execute("SELECT * FROM schedules WHERE doctor_id = ? AND date = ?", (doctor_id, date))
         rows = cursor.fetchall()
 
     conn.close()
@@ -94,7 +94,7 @@ def create_appointment(data: dict):
         (booking_code, patient_name, patient_age, patient_gender, patient_phone, patient_email, 
          doctor_id, doctor_name, department_name, appointment_date, time_slot, symptoms, 
          triage_level, urgency_score, status, created_at, payment_status, payment_amount, room_no, booking_source)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         booking_code, data["patient_name"], data["patient_age"], data["patient_gender"],
         data["patient_phone"], data["patient_email"], data["doctor_id"], doc["name"],
@@ -104,7 +104,7 @@ def create_appointment(data: dict):
     ))
     
     cursor.execute('''
-        UPDATE schedules SET is_booked = 1 WHERE doctor_id = %s AND date = %s AND time_slot = %s
+        UPDATE schedules SET is_booked = 1 WHERE doctor_id = ? AND date = ? AND time_slot = ?
     ''', (data["doctor_id"], data["appointment_date"], data["time_slot"]))
     
     # If new patient, block the consecutive next slot as well
@@ -119,7 +119,7 @@ def create_appointment(data: dict):
             if idx < len(standard_slots) - 1:
                 next_slot = standard_slots[idx + 1]
                 cursor.execute('''
-                    UPDATE schedules SET is_booked = 1 WHERE doctor_id = %s AND date = %s AND time_slot = %s
+                    UPDATE schedules SET is_booked = 1 WHERE doctor_id = ? AND date = ? AND time_slot = ?
                 ''', (data["doctor_id"], data["appointment_date"], next_slot))
         except ValueError:
             pass
@@ -142,16 +142,16 @@ def get_appointments(status: str = None, doctor_id: int = None, date: str = None
     params = []
     
     if status:
-        query += " AND status = %s"
+        query += " AND status = ?"
         params.append(status)
     if doctor_id:
-        query += " AND doctor_id = %s"
+        query += " AND doctor_id = ?"
         params.append(doctor_id)
     if date:
-        query += " AND appointment_date = %s"
+        query += " AND appointment_date = ?"
         params.append(date)
     if booking_source:
-        query += " AND booking_source = %s"
+        query += " AND booking_source = ?"
         params.append(booking_source)
         
     query += " ORDER BY id DESC"
@@ -164,7 +164,7 @@ def update_appointment_status(appointment_id: int, status: str, notes: str = "",
     conn = database.get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE appointments SET status = %s, consultation_notes = %s, room_no = %s WHERE id = %s",
+        "UPDATE appointments SET status = ?, consultation_notes = ?, room_no = ? WHERE id = ?",
         (status, notes, room_no, appointment_id)
     )
     conn.commit()
@@ -176,7 +176,7 @@ def create_prescription(appointment_id: int, diagnosis: str, medicines: list, ad
     conn = database.get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM appointments WHERE id = %s", (appointment_id,))
+    cursor.execute("SELECT * FROM appointments WHERE id = ?", (appointment_id,))
     appt = cursor.fetchone()
     if not appt:
         conn.close()
@@ -190,14 +190,14 @@ def create_prescription(appointment_id: int, diagnosis: str, medicines: list, ad
     cursor.execute('''
         INSERT INTO prescriptions
         (appointment_id, booking_code, patient_name, doctor_name, department_name, date, diagnosis, medicines_json, advice, next_visit, qr_hash)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         appointment_id, appt['booking_code'], appt['patient_name'], appt['doctor_name'],
         appt['department_name'], today_str, diagnosis, meds_json, advice, next_visit, qr_hash
     ))
-    presc_id = cursor.fetchone()[0]
+    presc_id = cursor.lastrowid
     
-    cursor.execute("UPDATE appointments SET status = 'Completed' WHERE id = %s", (appointment_id,))
+    cursor.execute("UPDATE appointments SET status = 'Completed' WHERE id = ?", (appointment_id,))
     conn.commit()
     conn.close()
     return presc_id
@@ -221,8 +221,8 @@ def update_prescription(prescription_id: int, diagnosis: str, medicines: list, a
     meds_json = json.dumps([m.dict() if hasattr(m, 'dict') else m for m in medicines])
     cursor.execute('''
         UPDATE prescriptions
-        SET diagnosis = %s, medicines_json = %s, advice = %s, next_visit = %s
-        WHERE id = %s
+        SET diagnosis = ?, medicines_json = ?, advice = ?, next_visit = ?
+        WHERE id = ?
     ''', (diagnosis, meds_json, advice, next_visit, prescription_id))
     conn.commit()
     conn.close()
@@ -231,7 +231,7 @@ def update_prescription(prescription_id: int, diagnosis: str, medicines: list, a
 def delete_prescription(prescription_id: int):
     conn = database.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM prescriptions WHERE id = %s", (prescription_id,))
+    cursor.execute("DELETE FROM prescriptions WHERE id = ?", (prescription_id,))
     conn.commit()
     conn.close()
     return True
@@ -250,7 +250,7 @@ def update_bed(bed_id: int, status: str, patient_name: str = "N/A"):
     cursor = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     cursor.execute(
-        "UPDATE beds SET status = %s, patient_name = %s, updated_at = %s WHERE id = %s",
+        "UPDATE beds SET status = ?, patient_name = ?, updated_at = ? WHERE id = ?",
         (status, patient_name, now_str, bed_id)
     )
     conn.commit()
@@ -268,7 +268,7 @@ def create_emergency(caller_name: str, caller_phone: str, location: str, priorit
     cursor.execute('''
         INSERT INTO emergency_alerts
         (alert_code, caller_name, caller_phone, location, priority, status, assigned_ambulance, created_at, eta_minutes)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (alert_code, caller_name, caller_phone, location, priority, "Dispatched", ambulance, created_at, 8))
     
     conn.commit()
@@ -297,11 +297,11 @@ def get_dashboard_kpis():
     today_str = datetime.now().strftime("%Y-%m-%d")
     
     # Today's appointments (Active Patients today)
-    cursor.execute("SELECT COUNT(*) FROM appointments WHERE appointment_date = %s", (today_str,))
+    cursor.execute("SELECT COUNT(*) FROM appointments WHERE appointment_date = ?", (today_str,))
     today_appts = cursor.fetchone()[0]
     
     # Today's revenue
-    cursor.execute("SELECT COALESCE(SUM(payment_amount), 0) FROM appointments WHERE appointment_date = %s", (today_str,))
+    cursor.execute("SELECT COALESCE(SUM(payment_amount), 0) FROM appointments WHERE appointment_date = ?", (today_str,))
     today_rev = cursor.fetchone()[0]
     
     # Bed Capacity (Available beds)
@@ -316,7 +316,7 @@ def get_dashboard_kpis():
     total_doctors = cursor.fetchone()[0]
     
     # Discharged today
-    cursor.execute("SELECT COUNT(*) FROM appointments WHERE status = 'Completed' AND appointment_date = %s", (today_str,))
+    cursor.execute("SELECT COUNT(*) FROM appointments WHERE status = 'Completed' AND appointment_date = ?", (today_str,))
     discharged_today = cursor.fetchone()[0]
     
     conn.close()

@@ -46,9 +46,13 @@ def add_pharmacy_item(req: schemas.PharmacyItemCreate):
 
 @router.delete("/items/{item_id}")
 def delete_pharmacy_item(item_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM pharmacy_items WHERE id = ?", (item_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Pharmacy item deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM pharmacy_items WHERE id = ?", (item_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True, "message": "Pharmacy item deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

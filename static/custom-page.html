@@ -114,6 +114,130 @@
       box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1) !important;
       outline: none;
     }
+
+    /* POS BILLING DITTO-SAME EXACT STYLING */
+    #posBillingCardPanel .pos-invoice-card {
+      background: #091024 !important;
+      border: 1px solid #1e2d4a !important;
+      border-left: 5px solid #2563eb !important;
+      border-radius: 12px !important;
+      padding: 28px 32px !important;
+      color: #ffffff !important;
+      margin-bottom: 24px !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    #posBillingCardPanel h2,
+    body #posBillingCardPanel h2,
+    body:not(.dark-theme) #posBillingCardPanel h2 {
+      color: #ffffff !important;
+    }
+
+    #posBillingCardPanel label,
+    body #posBillingCardPanel label,
+    body:not(.dark-theme) #posBillingCardPanel label {
+      color: #94a3b8 !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      margin-bottom: 6px !important;
+      display: block !important;
+    }
+
+    #posBillingCardPanel th,
+    body #posBillingCardPanel th,
+    body:not(.dark-theme) #posBillingCardPanel th {
+      color: #94a3b8 !important;
+    }
+
+    #posBillingCardPanel input::placeholder,
+    body #posBillingCardPanel input::placeholder {
+      color: #64748b !important;
+      opacity: 1 !important;
+    }
+
+    #posBillingCardPanel input,
+    #posBillingCardPanel select {
+      box-sizing: border-box !important;
+      background-color: #10192d !important;
+      border: 1px solid #23324d !important;
+      color: #ffffff !important;
+      border-radius: 8px !important;
+      height: 42px !important;
+      font-size: 13.5px !important;
+      padding: 0 14px !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    #posBillingCardPanel #posCustomerName {
+      border: 1px solid #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+    }
+
+    #posBillingCardPanel input:focus,
+    #posBillingCardPanel select:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+      outline: none !important;
+    }
+
+    #posBillingCardPanel .pos-btn-red {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 8px !important;
+      height: 42px !important;
+      font-weight: 700 !important;
+      font-size: 13px !important;
+      letter-spacing: 0.5px !important;
+      cursor: pointer !important;
+      text-transform: uppercase !important;
+      width: 100% !important;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+    }
+
+    #posBillingCardPanel .pos-btn-print {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 8px !important;
+      height: 48px !important;
+      width: 100% !important;
+      font-weight: 800 !important;
+      font-size: 15px !important;
+      letter-spacing: 0.5px !important;
+      cursor: pointer !important;
+      text-transform: uppercase !important;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+    }
+
+    #posBillingCardPanel #posGivenAmount {
+      background: #10192d !important;
+      border: 1px solid #334155 !important;
+      color: #ffffff !important;
+      border-radius: 8px !important;
+      height: 46px !important;
+      padding: 0 16px !important;
+      font-size: 18px !important;
+      font-weight: 700 !important;
+      width: 100% !important;
+      font-family: var(--font-mono) !important;
+    }
+
+    #posBillingCardPanel .pos-table-header {
+      background: #0f172a !important;
+      border-bottom: 1px solid #1e293b !important;
+      color: #94a3b8 !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    #posBillingCardPanel .pos-table-header th {
+      padding: 12px 16px !important;
+    }
   </style>
 </head>
 <body class="sky-aqua-theme dark-theme">
@@ -170,7 +294,159 @@
 
       <!-- View Panel -->
       <div class="crud-panel">
-        <div class="glass-card">
+
+        <!-- POS BILLING CARD (Shown when pageKey === 'pos_billing') -->
+        <div id="posBillingCardPanel" style="display:none;">
+          <div class="pos-invoice-card" style="background: #091024 !important; border: 1px solid #1e2d4a !important; border-left: 5px solid #2563eb !important; border-radius: 12px !important; padding: 28px 32px !important; color: #ffffff !important; margin-bottom: 24px !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;">
+            <h2 style="font-size: 18px; font-weight: 700; color: #ffffff !important; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+              Create Invoice
+            </h2>
+
+            <!-- Line 1: Bill Info & Customer Details -->
+            <div style="display: grid; grid-template-columns: 0.9fr 1.8fr 1.5fr 1.4fr 1.5fr 1.1fr; gap: 12px; margin-bottom: 20px; align-items: end;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">BILL NO</label>
+                <div style="position: relative;">
+                  <i class="fas fa-lock" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 12px;"></i>
+                  <input type="text" id="posBillNo" value="00001" readonly style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding-left: 34px !important; font-family: var(--font-mono); font-weight: 700; width: 100%; box-sizing: border-box !important;">
+                </div>
+              </div>
+              
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">DATE & TIME</label>
+                <div style="position: relative;">
+                  <i class="far fa-calendar-alt" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 13px;"></i>
+                  <input type="text" id="posDateTime" readonly style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding-left: 34px !important; font-weight: 600; width: 100%; box-sizing: border-box !important;">
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">CUSTOMER NAME</label>
+                <input type="text" id="posCustomerName" placeholder="Name" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">MOBILE</label>
+                <input type="text" id="posCustomerMobile" placeholder="Mobile" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">ADDRESS</label>
+                <input type="text" id="posCustomerAddress" placeholder="Address" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">PAYMENT</label>
+                <select id="posPaymentMethod" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; font-weight: 600; box-sizing: border-box !important;">
+                  <option value="CASH">CASH</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CARD">CARD</option>
+                  <option value="CREDIT">CREDIT</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Line 2: Product & Item Entry -->
+            <div style="display: grid; grid-template-columns: 2.2fr 1.2fr 0.8fr 1.2fr 1.2fr; gap: 12px; margin-bottom: 20px; align-items: end;">
+              <div style="position: relative;">
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">PRODUCT</label>
+                <input type="text" id="posProductSearch" list="posProductDatalist" oninput="onPosProductSelect()" onkeydown="if(event.key==='Enter') addPosItem()" placeholder="Search Product..." style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+                <datalist id="posProductDatalist">
+                  <option value="Paracetamol 650mg (Dolo)">
+                  <option value="Amoxicillin 500mg">
+                  <option value="Metoprolol 25mg">
+                  <option value="Atorvastatin 10mg">
+                  <option value="Pantoprazole 40mg">
+                  <option value="Doctor Consultation Fee">
+                  <option value="ECG Diagnostics Test">
+                  <option value="Complete Blood Count (CBC)">
+                  <option value="Lipid Profile Test">
+                  <option value="X-Ray Chest PA View">
+                </datalist>
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">HSN</label>
+                <input type="text" id="posProductHsn" placeholder="HSN Code" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">QTY</label>
+                <input type="number" id="posProductQty" value="1" min="1" onkeydown="if(event.key==='Enter') addPosItem()" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; text-align: center; font-weight: 600; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">RATE</label>
+                <input type="number" step="0.01" id="posProductRate" placeholder="0.00" onkeydown="if(event.key==='Enter') addPosItem()" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #23324d !important; border-radius: 8px !important; height: 42px !important; padding: 0 14px !important; width: 100%; box-sizing: border-box !important;">
+              </div>
+
+              <div>
+                <button type="button" class="pos-btn-red" onclick="addPosItem()" style="background: #ef4444 !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; height: 42px !important; font-weight: 700 !important; font-size: 13px !important; letter-spacing: 0.5px !important; cursor: pointer !important; text-transform: uppercase !important; width: 100% !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;">
+                  ADD ITEM
+                </button>
+              </div>
+            </div>
+
+            <!-- Itemized Invoice Table -->
+            <div style="background: #0a0f1d; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 24px; min-height: 180px;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr class="pos-table-header" style="background: #0f172a !important; color: #94a3b8 !important;">
+                    <th style="padding: 12px 16px; width: 60px;">S.NO</th>
+                    <th style="padding: 12px 16px;">PRODUCT NAME</th>
+                    <th style="padding: 12px 16px; width: 120px;">HSN</th>
+                    <th style="padding: 12px 16px; width: 120px; text-align: right;">RATE</th>
+                    <th style="padding: 12px 16px; width: 100px; text-align: center;">QTY</th>
+                    <th style="padding: 12px 16px; width: 140px; text-align: right;">AMOUNT</th>
+                    <th style="padding: 12px 16px; width: 80px; text-align: center;">DEL</th>
+                  </tr>
+                </thead>
+                <tbody id="posItemsTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #64748b; font-size: 13px;">
+                      No products added yet. Search a product above and click <strong>ADD ITEM</strong>.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Summary Calculation Section (Matching Screenshot Layout) -->
+            <div style="display: grid; grid-template-columns: 1fr 260px 280px; gap: 24px; margin-top: 15px; align-items: start;">
+              <div></div> <!-- Left empty spacer -->
+              
+              <!-- Middle Column: GIVEN AMOUNT -->
+              <div style="padding-top: 54px;">
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">GIVEN AMOUNT</label>
+                <input type="number" id="posGivenAmount" value="0" oninput="calculatePosTotals()" style="background-color: #10192d !important; color: #ffffff !important; border: 1px solid #334155 !important; border-radius: 8px !important; height: 46px !important; padding: 0 16px !important; font-size: 18px !important; font-weight: 700 !important; width: 100%; font-family: var(--font-mono); box-sizing: border-box !important;">
+              </div>
+
+              <!-- Right Column: TOTAL AMOUNT, AMOUNT TO RETURN, Print Bill -->
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">TOTAL AMOUNT</label>
+                  <div id="posTotalAmountDisplay" style="background: #10192d; border: 1px solid #334155; color: #ffffff; border-radius: 8px; height: 48px; padding: 0 16px; font-size: 22px; font-weight: 800; display: flex; align-items: center; font-family: var(--font-mono);">
+                    0
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">AMOUNT TO RETURN</label>
+                  <div id="posReturnAmountDisplay" style="background: #10192d; border: 1px solid #334155; color: #ffffff; border-radius: 8px; height: 46px; padding: 0 16px; font-size: 18px; font-weight: 700; display: flex; align-items: center; font-family: var(--font-mono);">
+                    0.00
+                  </div>
+                </div>
+
+                <button type="button" class="pos-btn-print" onclick="printPosBill()" style="background: #ef4444 !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; height: 48px !important; width: 100% !important; font-weight: 800 !important; font-size: 15px !important; letter-spacing: 0.5px !important; cursor: pointer !important; text-transform: uppercase !important; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;">
+                  Print Bill
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="glass-card" id="crud-glass-card">
           <!-- Dynamic Header -->
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:20px;">
             <div>

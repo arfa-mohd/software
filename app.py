@@ -91,6 +91,9 @@ def get_logo():
 
 @app.get("/")
 def read_root():
+    index_file = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file, media_type="text/html")
     return {"message": "AuraCare AI Platform Backend API Running v3.0.0"}
 
 @app.exception_handler(404)
@@ -99,4 +102,4 @@ def custom_404_handler(request: Request, exc):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

@@ -67,10 +67,15 @@ def update_appointment(appointment_id: int, req: AppointmentUpdate):
 
 @router.delete("/{appointment_id}")
 def delete_appointment(appointment_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM appointments WHERE id = ?", (appointment_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Appointment deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM prescriptions WHERE appointment_id = ?", (appointment_id,))
+        cursor.execute("DELETE FROM appointments WHERE id = ?", (appointment_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True, "message": "Appointment deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 

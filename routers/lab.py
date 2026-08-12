@@ -42,18 +42,25 @@ def book_lab_test(req: schemas.LabBookingRequest):
 
 @router.delete("/bookings/{booking_id}")
 def delete_lab_booking(booking_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM lab_bookings WHERE id = ?", (booking_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Lab booking deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM lab_bookings WHERE id = ?", (booking_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True, "message": "Lab booking deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/tests/{test_id}")
 def delete_lab_test(test_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM lab_tests WHERE id = ?", (test_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Lab test deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM lab_tests WHERE id = ?", (test_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True, "message": "Lab test deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

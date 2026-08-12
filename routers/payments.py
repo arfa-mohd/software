@@ -40,9 +40,13 @@ def process_payment(req: schemas.PaymentRequest):
 
 @router.delete("/{payment_id}")
 def delete_payment(payment_id: int):
-    conn = database.get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM payments WHERE id = ?", (payment_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Payment record deleted successfully"}
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM payments WHERE id = ?", (payment_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True, "message": "Payment record deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

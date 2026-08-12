@@ -121,3 +121,51 @@ def send_meta_reply(to_phone: str, reply_text: str):
         print("Meta API Response:", resp.status_code, resp.json())
     except Exception as e:
         print("Failed to dispatch Meta API reply:", e)
+
+from pydantic import BaseModel
+
+class BulkClientItem(BaseModel):
+    id: str
+    name: str
+    phone: str
+    doctor: Optional[str] = "Consultant Doctor"
+
+class BulkCampaignRequest(BaseModel):
+    title: Optional[str] = "Special Healthcare Campaign"
+    template: str
+    clients: List[BulkClientItem]
+
+@router.post("/send_bulk_campaign")
+def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
+    """Direct Server-Side API to Send WhatsApp Campaign to ALL Clients in 1 Click"""
+    sent_list = []
+    for c in req.clients:
+        clean_phone = c.phone.replace("+", "").replace(" ", "").replace("-", "")
+        if len(clean_phone) == 10:
+            clean_phone = "91" + clean_phone
+        
+        # Build personalized message text
+        msg = req.template.replace("{name}", c.name)
+        msg = msg.replace("{doctor}", c.doctor or "Consultant Doctor")
+        msg = msg.replace("{hospital}", "AuraCare Nexus Hospital")
+        
+        # Dispatch via Meta Cloud API & Store in Database Log
+        try:
+            send_meta_reply(clean_phone, msg)
+            if hasattr(database, 'add_whatsapp_message'):
+                database.add_whatsapp_message(clean_phone, "outbound", msg)
+        except Exception as e:
+            print(f"Error sending WhatsApp to {clean_phone}: {e}")
+        
+        sent_list.append({
+            "id": c.id,
+            "phone": clean_phone,
+            "name": c.name,
+            "status": "Sent"
+        })
+
+    return {
+        "status": "success",
+        "total_sent": len(sent_list),
+        "clients": sent_list
+    }

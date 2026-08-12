@@ -85,6 +85,11 @@ async function loadCustomPageLayout() {
     
     // Build Sidebar Menu
     buildSidebar(pages);
+
+    if (pageKey === 'pos_billing') {
+      window.location.href = "/static/index.html#pos_billing";
+      return;
+    }
     
     // Setup CRUD table headers
     buildTableHeaders();
@@ -98,6 +103,286 @@ async function loadCustomPageLayout() {
   } catch (err) {
     console.error("Error setting up custom page layout", err);
   }
+}
+
+// ========================================================
+//  POS BILLING SYSTEM FOR STANDALONE CUSTOM PAGE
+// ========================================================
+let posItems = [];
+let posBillCounter = 1;
+
+const POS_PRODUCT_CATALOG = {
+  "Paracetamol 650mg (Dolo)": { hsn: "3004", rate: 35.00 },
+  "Amoxicillin 500mg": { hsn: "3004", rate: 85.00 },
+  "Metoprolol 25mg": { hsn: "3004", rate: 60.00 },
+  "Atorvastatin 10mg": { hsn: "3004", rate: 110.00 },
+  "Pantoprazole 40mg": { hsn: "3004", rate: 75.00 },
+  "Doctor Consultation Fee": { hsn: "9993", rate: 500.00 },
+  "ECG Diagnostics Test": { hsn: "9993", rate: 350.00 },
+  "Complete Blood Count (CBC)": { hsn: "9993", rate: 450.00 },
+  "Lipid Profile Test": { hsn: "9993", rate: 800.00 },
+  "X-Ray Chest PA View": { hsn: "9993", rate: 600.00 }
+};
+
+function getFormattedPosDateTime() {
+  const now = new Date();
+  const days = ['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  let hours = now.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${day}-${month}-${year},${hours}:${minutes} ${ampm}`;
+}
+
+function initPosBilling() {
+  const dtInput = document.getElementById("posDateTime");
+  if (dtInput) {
+    dtInput.value = getFormattedPosDateTime();
+    setInterval(() => {
+      if (document.getElementById("posDateTime")) {
+        document.getElementById("posDateTime").value = getFormattedPosDateTime();
+      }
+    }, 1000);
+  }
+
+  const billInput = document.getElementById("posBillNo");
+  if (billInput) {
+    billInput.value = String(posBillCounter).padStart(5, '0');
+  }
+}
+
+function onPosProductSelect() {
+  const searchVal = document.getElementById("posProductSearch")?.value?.trim();
+  if (searchVal && POS_PRODUCT_CATALOG[searchVal]) {
+    const item = POS_PRODUCT_CATALOG[searchVal];
+    const hsnEl = document.getElementById("posProductHsn");
+    const rateEl = document.getElementById("posProductRate");
+    if (hsnEl) hsnEl.value = item.hsn;
+    if (rateEl) rateEl.value = item.rate.toFixed(2);
+  }
+}
+
+function addPosItem() {
+  const nameInput = document.getElementById("posProductSearch");
+  const hsnInput = document.getElementById("posProductHsn");
+  const qtyInput = document.getElementById("posProductQty");
+  const rateInput = document.getElementById("posProductRate");
+
+  const name = nameInput?.value?.trim();
+  const hsn = hsnInput?.value?.trim() || "3004";
+  const qty = parseInt(qtyInput?.value) || 1;
+  const rate = parseFloat(rateInput?.value) || 0.00;
+
+  if (!name) {
+    alert("Please enter or select a Product Name.");
+    nameInput?.focus();
+    return;
+  }
+
+  const amount = qty * rate;
+  posItems.push({
+    id: Date.now() + Math.random(),
+    name,
+    hsn,
+    qty,
+    rate,
+    amount
+  });
+
+  // Reset product inputs
+  nameInput.value = "";
+  hsnInput.value = "";
+  qtyInput.value = "1";
+  rateInput.value = "";
+
+  renderPosTable();
+  calculatePosTotals();
+  nameInput.focus();
+}
+
+function deletePosItem(itemId) {
+  posItems = posItems.filter(item => item.id !== itemId);
+  renderPosTable();
+  calculatePosTotals();
+}
+
+function renderPosTable() {
+  const tbody = document.getElementById("posItemsTableBody");
+  if (!tbody) return;
+
+  if (posItems.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b; font-size: 13px;">
+          No products added yet. Search a product above and click <strong>ADD ITEM</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = posItems.map((item, idx) => `
+    <tr style="border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 13.5px;">
+      <td style="padding: 12px 16px; color: #94a3b8; font-weight: 600;">${idx + 1}</td>
+      <td style="padding: 12px 16px; font-weight: 600;">${item.name}</td>
+      <td style="padding: 12px 16px; color: #94a3b8; font-family: var(--font-mono);">${item.hsn}</td>
+      <td style="padding: 12px 16px; text-align: right; font-family: var(--font-mono);">${item.rate.toFixed(2)}</td>
+      <td style="padding: 12px 16px; text-align: center; font-weight: 700;">${item.qty}</td>
+      <td style="padding: 12px 16px; text-align: right; font-weight: 700; font-family: var(--font-mono); color: #10b981;">${item.amount.toFixed(2)}</td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <button type="button" class="pos-del-btn" onclick="deletePosItem(${item.id})">DEL</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function calculatePosTotals() {
+  const total = posItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalDisplay = document.getElementById("posTotalAmountDisplay");
+  if (totalDisplay) {
+    totalDisplay.innerText = total % 1 === 0 ? String(total) : total.toFixed(2);
+  }
+
+  const givenInput = document.getElementById("posGivenAmount");
+  const given = parseFloat(givenInput?.value) || 0;
+  const returnAmt = Math.max(0, given - total);
+
+  const returnDisplay = document.getElementById("posReturnAmountDisplay");
+  if (returnDisplay) {
+    returnDisplay.innerText = returnAmt.toFixed(2);
+  }
+}
+
+async function printPosBill() {
+  const customerName = document.getElementById("posCustomerName")?.value?.trim();
+  const customerMobile = document.getElementById("posCustomerMobile")?.value?.trim() || "";
+  const customerAddress = document.getElementById("posCustomerAddress")?.value?.trim() || "";
+  const paymentMethod = document.getElementById("posPaymentMethod")?.value || "CASH";
+  const billNo = document.getElementById("posBillNo")?.value || String(posBillCounter).padStart(5, '0');
+  const dateTimeStr = document.getElementById("posDateTime")?.value || getFormattedPosDateTime();
+
+  if (!customerName) {
+    alert("Please enter Customer Name.");
+    document.getElementById("posCustomerName")?.focus();
+    return;
+  }
+
+  if (posItems.length === 0) {
+    alert("Please add at least one Product item to the invoice before printing.");
+    document.getElementById("posProductSearch")?.focus();
+    return;
+  }
+
+  const totalAmount = posItems.reduce((sum, item) => sum + item.amount, 0);
+
+  try {
+    await fetch("/api/payments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        invoice_id: `INV-${billNo}`,
+        patient_name: customerName,
+        amount: totalAmount,
+        payment_method: paymentMethod
+      })
+    });
+  } catch (e) {
+    console.warn("API payment log notice:", e);
+  }
+
+  const printWindow = window.open('', '_blank', 'width=750,height=850');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Tax Invoice #${billNo} - AuraCare AI</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #f8fafc; color: #0f172a; }
+        .invoice-card { background: #ffffff; border-radius: 16px; padding: 32px; max-width: 650px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+        .brand { font-size: 24px; font-weight: 800; color: #0f172a; }
+        .brand span { color: #0284c7; }
+        .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; font-size: 13px; background: #f1f5f9; padding: 14px 18px; border-radius: 10px; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        .table th { background: #0f172a; color: #ffffff; padding: 10px 12px; text-align: left; }
+        .table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px 20px; width: 280px; margin-left: auto; font-size: 14px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .summary-row.total { font-weight: 800; font-size: 16px; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 4px; color: #0284c7; }
+        .btn-print { background: #ef4444; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; margin-top: 24px; width: 100%; text-transform: uppercase; }
+        @media print { .btn-print { display: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-card">
+        <div class="header">
+          <div class="brand">AuraCare <span>AI</span> Hospital</div>
+          <div class="subtitle">Multi-Specialty Super Specialty Medical Center & Research Institute</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">GSTIN: 33AAAAA0000A1Z5 • 24x7 Counter Helpline: +91 98765 43210</div>
+        </div>
+        <div style="text-align: center; font-weight: 800; font-size: 15px; color: #0f172a; margin-bottom: 16px; text-transform: uppercase;">
+          TAX INVOICE / CASH RECEIPT
+        </div>
+        <div class="meta-grid">
+          <div><strong>Bill No:</strong> ${billNo}</div>
+          <div><strong>Date & Time:</strong> ${dateTimeStr}</div>
+          <div><strong>Customer Name:</strong> ${customerName}</div>
+          <div><strong>Mobile:</strong> ${customerMobile || 'N/A'}</div>
+          <div><strong>Address:</strong> ${customerAddress || 'Counter Walk-in'}</div>
+          <div><strong>Payment Method:</strong> ${paymentMethod}</div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product / Service</th>
+              <th>HSN</th>
+              <th style="text-align: right;">Rate</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${posItems.map((it, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${it.name}</strong></td>
+                <td>${it.hsn}</td>
+                <td style="text-align: right;">₹${it.rate.toFixed(2)}</td>
+                <td style="text-align: center;">${it.qty}</td>
+                <td style="text-align: right;">₹${it.amount.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="summary-box">
+          <div class="summary-row total">
+            <span>Total Amount:</span>
+            <span>₹${totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+        <button class="btn-print" onclick="window.print()">Print Invoice</button>
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  posItems = [];
+  posBillCounter++;
+  document.getElementById("posCustomerName").value = "";
+  document.getElementById("posCustomerMobile").value = "";
+  document.getElementById("posCustomerAddress").value = "";
+  document.getElementById("posGivenAmount").value = "0";
+  document.getElementById("posBillNo").value = String(posBillCounter).padStart(5, '0');
+  renderPosTable();
+  calculatePosTotals();
 }
 
 function buildSidebar(pages) {

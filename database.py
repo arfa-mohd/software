@@ -1,5 +1,4 @@
-import psycopg2
-from psycopg2.extras import DictCursor
+import sqlite3
 import os
 import json
 import hashlib
@@ -8,10 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://auracare_db_user:jPYeQgwPsHdSTCGTJUlGf8DFDtcC8kMS@dpg-d9r0n1f40ujc73986gmg-a/auracare_db')
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hospital_local.db')
 
 def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 def hash_password(password: str) -> str:
@@ -24,7 +25,7 @@ def init_db():
     # 1. Users Table (Role Based Access)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         full_name TEXT NOT NULL,
@@ -37,7 +38,7 @@ def init_db():
     # 2. Departments Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS departments (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         icon TEXT NOT NULL,
         description TEXT NOT NULL,
@@ -48,7 +49,7 @@ def init_db():
     # 3. Doctors Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS doctors (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         department_id INTEGER NOT NULL,
         department_name TEXT NOT NULL,
@@ -69,7 +70,7 @@ def init_db():
     # 4. Doctor Schedules Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS schedules (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         doctor_id INTEGER NOT NULL,
         date TEXT NOT NULL,
         time_slot TEXT NOT NULL,
@@ -81,7 +82,7 @@ def init_db():
     # 5. Patients EMR Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS patients (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         age INTEGER NOT NULL,
         gender TEXT NOT NULL,
@@ -98,7 +99,7 @@ def init_db():
     # 6. Appointments Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS appointments (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         booking_code TEXT UNIQUE NOT NULL,
         patient_name TEXT NOT NULL,
         patient_age INTEGER NOT NULL,
@@ -125,12 +126,15 @@ def init_db():
     ''')
 
     # Ensure booking_source column exists if table was already created
-    cursor.execute("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS booking_source TEXT DEFAULT 'Manual'")
+    try:
+        cursor.execute("ALTER TABLE appointments ADD COLUMN booking_source TEXT DEFAULT 'Manual'")
+    except Exception:
+        pass
 
     # 7. Prescriptions Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS prescriptions (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         appointment_id INTEGER NOT NULL,
         booking_code TEXT NOT NULL,
         patient_name TEXT NOT NULL,
@@ -149,7 +153,7 @@ def init_db():
     # 8. Hospital Beds Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS beds (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         ward_name TEXT NOT NULL,
         bed_number TEXT NOT NULL,
         bed_type TEXT NOT NULL,
@@ -162,7 +166,7 @@ def init_db():
     # 9. Emergency SOS Alerts Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS emergency_alerts (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         alert_code TEXT UNIQUE NOT NULL,
         caller_name TEXT NOT NULL,
         caller_phone TEXT NOT NULL,
@@ -193,12 +197,15 @@ def init_db():
     ''')
 
     # Ensure triage_data column exists if table was already created
-    cursor.execute("ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS triage_data TEXT DEFAULT '{}'")
+    try:
+        cursor.execute("ALTER TABLE whatsapp_sessions ADD COLUMN triage_data TEXT DEFAULT '{}'")
+    except Exception:
+        pass
 
     # 10b. Real WhatsApp Message History Log Table (Database Persistence)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS whatsapp_messages (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         phone_number TEXT NOT NULL,
         patient_name TEXT NOT NULL,
         sender TEXT NOT NULL, -- 'patient' or 'bot'
@@ -210,7 +217,7 @@ def init_db():
     # 11. Lab Tests & Bookings
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS lab_tests (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         test_name TEXT NOT NULL,
         category TEXT NOT NULL,
         price REAL NOT NULL,
@@ -221,7 +228,7 @@ def init_db():
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS lab_bookings (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         booking_code TEXT UNIQUE NOT NULL,
         patient_name TEXT NOT NULL,
         phone TEXT NOT NULL,
@@ -236,7 +243,7 @@ def init_db():
     # 12. Pharmacy Medicine Stock & Invoices
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS pharmacy_items (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
         stock_qty INTEGER NOT NULL,
@@ -249,7 +256,7 @@ def init_db():
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS pharmacy_invoices (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         invoice_no TEXT UNIQUE NOT NULL,
         patient_name TEXT NOT NULL,
         date TEXT NOT NULL,
@@ -262,7 +269,7 @@ def init_db():
     # 13. Payment Records
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payments (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         invoice_id TEXT NOT NULL,
         patient_name TEXT NOT NULL,
         amount REAL NOT NULL,
@@ -284,7 +291,7 @@ def init_db():
     # 14. Super Admin Custom Pages Config Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS custom_pages (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         key TEXT UNIQUE NOT NULL,
         title TEXT NOT NULL,
         subtitle TEXT NOT NULL,
@@ -313,14 +320,14 @@ def init_db():
             ('pos_billing', 'POS Billing', 'Point of Sale Billing & Invoices', 'fas fa-receipt', 1, '["Patient Name", "Age", "Billing Item", "Amount", "Payment Method"]', 1, 'dyn_pos_billing')
         ]
         cursor.executemany(
-            "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             default_pages
         )
         
         # Create physical table for POS Billing
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS dyn_pos_billing (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             col_0 TEXT, -- Patient Name
             col_1 TEXT, -- Age
             col_2 TEXT, -- Billing Item
@@ -331,7 +338,7 @@ def init_db():
     # 15. System Settings Table (For branding/white-labeling)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS system_settings (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         key TEXT UNIQUE NOT NULL,
         value TEXT NOT NULL
     )
@@ -346,14 +353,14 @@ def init_db():
             ('software_subtitle', 'Next-Gen Enterprise Health Intelligence Ecosystem')
         ]
         cursor.executemany(
-            "INSERT INTO system_settings (key, value) VALUES (%s, %s)",
+            "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             default_settings
         )
 
     # 16. Patient Folders Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS patient_folders (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         patient_name TEXT UNIQUE NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -362,7 +369,7 @@ def init_db():
     # 17. Patient Documents Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS patient_documents (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         folder_id INTEGER NOT NULL,
         filename TEXT NOT NULL,
         file_path TEXT NOT NULL,
@@ -389,7 +396,7 @@ def seed_data(cursor):
         ("patient@auracare.ai", hash_password("patient123"), "David Miller", "Patient", "9876543215", now_str)
     ]
     cursor.executemany(
-        "INSERT INTO users (email, password_hash, full_name, role, phone, created_at) VALUES (%s, %s, %s, %s, %s, %s)",
+        "INSERT INTO users (email, password_hash, full_name, role, phone, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         users
     )
 
@@ -405,7 +412,7 @@ def seed_data(cursor):
         ("Emergency & Trauma", "fa-kit-medical", "24/7 Critical Emergency Unit", "Dr. Sarah Connor")
     ]
     cursor.executemany(
-        "INSERT INTO departments (name, icon, description, lead_doctor) VALUES (%s, %s, %s, %s)",
+        "INSERT INTO departments (name, icon, description, lead_doctor) VALUES (?, ?, ?, ?)",
         departments
     )
 
@@ -446,7 +453,7 @@ def seed_data(cursor):
     cursor.executemany(
         '''INSERT INTO doctors 
         (name, department_id, department_name, title, specialty, experience, rating, reviews_count, fee, avatar_url, bio, languages, status) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         doctors
     )
 
@@ -463,7 +470,7 @@ def seed_data(cursor):
                 schedules.append((doc_id, slot_date, slot, is_booked))
     
     cursor.executemany(
-        "INSERT INTO schedules (doctor_id, date, time_slot, is_booked) VALUES (%s, %s, %s, %s)",
+        "INSERT INTO schedules (doctor_id, date, time_slot, is_booked) VALUES (?, ?, ?, ?)",
         schedules
     )
 
@@ -476,7 +483,7 @@ def seed_data(cursor):
     cursor.executemany(
         '''INSERT INTO patients 
         (name, age, gender, phone, email, blood_group, allergies, insurance_provider, policy_no, medical_history) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         patients
     )
 
@@ -501,7 +508,7 @@ def seed_data(cursor):
     cursor.executemany(
         '''INSERT INTO appointments 
         (booking_code, patient_name, patient_age, patient_gender, patient_phone, patient_email, doctor_id, doctor_name, department_name, appointment_date, time_slot, symptoms, triage_level, urgency_score, status, created_at, consultation_notes, payment_status, payment_amount, room_no, booking_source) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         appointments
     )
 
@@ -519,7 +526,7 @@ def seed_data(cursor):
         ("9876599122", "Arthur Pendelton", "bot", "🧪 *Lab Diagnostics Status*\n📄 Patient: Arthur Pendelton\n🔬 Test: Fasting Blood Sugar & HbA1c\n✅ Status: Ready & Verified", "09:31 AM")
     ]
     cursor.executemany(
-        "INSERT INTO whatsapp_messages (phone_number, patient_name, sender, message, timestamp) VALUES (%s, %s, %s, %s, %s)",
+        "INSERT INTO whatsapp_messages (phone_number, patient_name, sender, message, timestamp) VALUES (?, ?, ?, ?, ?)",
         wa_msgs
     )
 
@@ -531,7 +538,7 @@ def seed_data(cursor):
     cursor.execute(
         '''INSERT INTO prescriptions 
         (appointment_id, booking_code, patient_name, doctor_name, department_name, date, diagnosis, medicines_json, advice, next_visit, qr_hash)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (1, "AURA-8821", "David Miller", "Dr. Rajesh Kumar", "Cardiology", today.strftime("%Y-%m-%d"),
          "Mild Sinus Tachycardia & Exertional Dyspnea", meds,
          "Avoid strenuous workouts for 1 week. Maintain low sodium diet. Monitor BP twice daily.",
@@ -552,7 +559,7 @@ def seed_data(cursor):
         ("General Ward B", "GEN-B2", "Oxygen Assisted", "Available", "N/A", datetime.now().strftime("%Y-%m-%d %H:%M")),
     ]
     cursor.executemany(
-        "INSERT INTO beds (ward_name, bed_number, bed_type, status, patient_name, updated_at) VALUES (%s, %s, %s, %s, %s, %s)",
+        "INSERT INTO beds (ward_name, bed_number, bed_type, status, patient_name, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
         beds
     )
 
@@ -560,7 +567,7 @@ def seed_data(cursor):
     cursor.execute(
         '''INSERT INTO emergency_alerts 
         (alert_code, caller_name, caller_phone, location, priority, status, assigned_ambulance, created_at, eta_minutes)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         ("SOS-901", "Emergency Helpline", "9876591100", "742 Anna Salai, Sector 4, Chennai", "CRITICAL - LEVEL 1",
          "Dispatched", "Ambulance Unit Alpha-03", datetime.now().strftime("%Y-%m-%d %H:%M"), 8)
     )
@@ -575,14 +582,14 @@ def seed_data(cursor):
         ("RT-PCR Viral Panel", "Microbiology", 1200.00, 12, "Nasal Swab")
     ]
     cursor.executemany(
-        "INSERT INTO lab_tests (test_name, category, price, turnaround_hours, sample_type) VALUES (%s, %s, %s, %s, %s)",
+        "INSERT INTO lab_tests (test_name, category, price, turnaround_hours, sample_type) VALUES (?, ?, ?, ?, ?)",
         lab_tests
     )
 
     cursor.execute(
         '''INSERT INTO lab_bookings
         (booking_code, patient_name, phone, test_name, date, status, result_summary, file_url)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         ("LAB-701", "David Miller", "9876543215", "Complete Blood Count (CBC)", today.strftime("%Y-%m-%d"),
          "Ready", "Hemoglobin 14.2 g/dL, WBC Count 7,200/mcL - Normal Range", "/static/reports/cbc_david_miller.pdf")
     )
@@ -596,13 +603,13 @@ def seed_data(cursor):
         ("Pantoprazole 40mg", "Antacids", 410, 35.00, "2027-11-25", "B-3349", "Zydus Healthcare")
     ]
     cursor.executemany(
-        "INSERT INTO pharmacy_items (name, category, stock_qty, unit_price, expiry_date, batch_no, manufacturer) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO pharmacy_items (name, category, stock_qty, unit_price, expiry_date, batch_no, manufacturer) VALUES (?, ?, ?, ?, ?, ?, ?)",
         pharmacy_items
     )
 
     cursor.execute(
         '''INSERT INTO pharmacy_invoices (invoice_no, patient_name, date, total_amount, payment_status, items_json)
-        VALUES (%s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?)''',
         ("INV-5501", "David Miller", today.strftime("%Y-%m-%d"), 125.00, "Paid", meds)
     )
 
@@ -618,7 +625,7 @@ def seed_data(cursor):
     ]
     cursor.executemany(
         '''INSERT INTO payments (invoice_id, patient_name, amount, payment_method, transaction_ref, status, date)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+        VALUES (?, ?, ?, ?, ?, ?, ?)''',
         seed_payments
     )
 
@@ -628,7 +635,7 @@ def seed_data(cursor):
 def get_whatsapp_session(phone_number: str):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM whatsapp_sessions WHERE phone_number = %s", (phone_number,))
+    cursor.execute("SELECT * FROM whatsapp_sessions WHERE phone_number = ?", (phone_number,))
     row = cursor.fetchone()
     conn.close()
     if row:
@@ -650,7 +657,7 @@ def save_whatsapp_session(phone_number: str, step: str, patient_name: str = "", 
     triage_json = json.dumps(triage_data) if triage_data else "{}"
     cursor.execute('''
         INSERT INTO whatsapp_sessions (phone_number, step, patient_name, patient_age, patient_gender, symptoms, triage_data, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(phone_number) DO UPDATE SET
             step = excluded.step,
             patient_name = excluded.patient_name,
@@ -669,7 +676,7 @@ def save_whatsapp_message(phone_number: str, patient_name: str, sender: str, mes
     time_str = datetime.now().strftime("%I:%M %p")
     cursor.execute('''
         INSERT INTO whatsapp_messages (phone_number, patient_name, sender, message, timestamp)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?)
     ''', (phone_number, patient_name, sender, message, time_str))
     conn.commit()
     conn.close()
@@ -677,7 +684,7 @@ def save_whatsapp_message(phone_number: str, patient_name: str, sender: str, mes
 def get_whatsapp_messages(phone_number: str):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM whatsapp_messages WHERE phone_number = %s ORDER BY id ASC", (phone_number,))
+    cursor.execute("SELECT * FROM whatsapp_messages WHERE phone_number = ? ORDER BY id ASC", (phone_number,))
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -699,7 +706,7 @@ def get_today_whatsapp_messages():
     conn = get_db_connection()
     cursor = conn.cursor()
     today_str = datetime.now().strftime("%Y-%m-%d")
-    cursor.execute("SELECT * FROM whatsapp_messages WHERE timestamp LIKE %s ORDER BY id DESC", (f"{today_str}%",))
+    cursor.execute("SELECT * FROM whatsapp_messages WHERE timestamp LIKE ? ORDER BY id DESC", (f"{today_str}%",))
     rows = cursor.fetchall()
     if not rows:
         cursor.execute("SELECT * FROM whatsapp_messages ORDER BY id DESC LIMIT 6")
@@ -710,7 +717,7 @@ def get_today_whatsapp_messages():
 def clear_whatsapp_session(phone_number: str):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM whatsapp_sessions WHERE phone_number = %s", (phone_number,))
+    cursor.execute("DELETE FROM whatsapp_sessions WHERE phone_number = ?", (phone_number,))
     conn.commit()
     conn.close()
 
@@ -726,7 +733,7 @@ def get_custom_pages():
 def get_custom_page_by_key(key: str):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM custom_pages WHERE key = %s", (key,))
+    cursor.execute("SELECT * FROM custom_pages WHERE key = ?", (key,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -740,15 +747,13 @@ def create_custom_page(key: str, title: str, subtitle: str, icon: str, columns: 
     try:
         # Register custom page
         cursor.execute(
-            "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES (%s, %s, %s, %s, 1, %s, 1, %s)",
+            "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES (?, ?, ?, ?, 1, ?, 1, ?)",
             (key, title, subtitle, icon, columns_json, table_name)
         )
         
-        # Dynamically build and execute CREATE TABLE for PostgreSQL
-        # We store columns in columns_json and dynamic table columns as col_0, col_1, col_2, ...
-        # to avoid column name restrictions/escapes.
+        # Dynamically build and execute CREATE TABLE for SQLite
         col_definitions = ", ".join([f"col_{i} TEXT" for i in range(len(columns))])
-        create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} (id SERIAL PRIMARY KEY, {col_definitions})"
+        create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY AUTOINCREMENT, {col_definitions})"
         cursor.execute(create_sql)
         
         conn.commit()
@@ -767,7 +772,7 @@ def update_page_visibility_and_name(key: str, is_visible: int, title: str):
     success = False
     try:
         cursor.execute(
-            "UPDATE custom_pages SET is_visible = %s, title = %s WHERE key = %s",
+            "UPDATE custom_pages SET is_visible = ?, title = ? WHERE key = ?",
             (is_visible, title, key)
         )
         conn.commit()
@@ -783,14 +788,14 @@ def delete_custom_page(key: str):
     cursor = conn.cursor()
     success = False
     try:
-        cursor.execute("SELECT table_name FROM custom_pages WHERE key = %s AND is_custom = 1", (key,))
+        cursor.execute("SELECT table_name FROM custom_pages WHERE key = ? AND is_custom = 1", (key,))
         row = cursor.fetchone()
         if row:
             table_name = row['table_name']
             # Drop the table
             cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
             # Delete from registry
-            cursor.execute("DELETE FROM custom_pages WHERE key = %s", (key,))
+            cursor.execute("DELETE FROM custom_pages WHERE key = ?", (key,))
             conn.commit()
             success = True
     except Exception as e:
@@ -824,7 +829,7 @@ def add_dynamic_table_data(table_name: str, data: dict):
         cols = [k for k in data.keys() if k.startswith("col_")]
         vals = [data[k] for k in cols]
         if cols:
-            placeholders = ", ".join(["%s"] * len(cols))
+            placeholders = ", ".join(["?"] * len(cols))
             columns_str = ", ".join(cols)
             cursor.execute(f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders})", vals)
             conn.commit()
@@ -843,10 +848,10 @@ def update_dynamic_table_data(table_name: str, row_id: int, data: dict):
     success = False
     try:
         cols = [k for k in data.keys() if k.startswith("col_")]
-        sets = ", ".join([f"{k} = %s" for k in cols])
+        sets = ", ".join([f"{k} = ?" for k in cols])
         vals = [data[k] for k in cols] + [row_id]
         if cols:
-            cursor.execute(f"UPDATE {table_name} SET {sets} WHERE id = %s", vals)
+            cursor.execute(f"UPDATE {table_name} SET {sets} WHERE id = ?", vals)
             conn.commit()
             success = True
     except Exception as e:
@@ -862,7 +867,7 @@ def delete_dynamic_table_data(table_name: str, row_id: int):
     cursor = conn.cursor()
     success = False
     try:
-        cursor.execute(f"DELETE FROM {table_name} WHERE id = %s", (row_id,))
+        cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (row_id,))
         conn.commit()
         success = True
     except Exception as e:
@@ -887,7 +892,7 @@ def update_system_settings(settings: dict):
     try:
         for k, v in settings.items():
             cursor.execute(
-                "INSERT INTO system_settings (key, value) VALUES (%s, %s) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value",
+                "INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 (k, v)
             )
         conn.commit()
