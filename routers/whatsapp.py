@@ -159,8 +159,7 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
         msg = msg.replace("{hospital}", "AuraCare Nexus Hospital")
         
         meta_status = "Sent"
-        error_detail = None
-
+        meta_res = None
         try:
             clean_text = msg.replace("**", "*")
             template_payload = {
@@ -172,7 +171,9 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
                     "language": {"code": "en_US"}
                 }
             }
-            requests.post(url, json=template_payload, headers=headers, timeout=4)
+            resp_tmpl = requests.post(url, json=template_payload, headers=headers, timeout=5)
+            tmpl_data = resp_tmpl.json()
+            print(f"Meta Template Dispatch ({clean_phone}):", resp_tmpl.status_code, tmpl_data)
 
             text_payload = {
                 "messaging_product": "whatsapp",
@@ -180,18 +181,28 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
                 "type": "text",
                 "text": {"body": clean_text}
             }
-            resp_txt = requests.post(url, json=text_payload, headers=headers, timeout=4)
-            
+            resp_txt = requests.post(url, json=text_payload, headers=headers, timeout=5)
+            txt_data = resp_txt.json()
+            print(f"Meta Text Dispatch ({clean_phone}):", resp_txt.status_code, txt_data)
+
+            if resp_tmpl.status_code != 200:
+                meta_status = f"Meta HTTP {resp_tmpl.status_code}"
+                meta_res = tmpl_data
+            else:
+                meta_res = tmpl_data
+
             if hasattr(database, 'add_whatsapp_message'):
                 database.add_whatsapp_message(clean_phone, "outbound", msg)
         except Exception as e:
+            meta_status = f"Error: {str(e)}"
             print(f"Parallel dispatch info for {clean_phone}:", e)
 
         return {
             "id": c.id,
             "phone": clean_phone,
             "name": c.name,
-            "status": "Sent"
+            "status": meta_status,
+            "meta_res": meta_res
         }
 
     with ThreadPoolExecutor(max_workers=10) as executor:

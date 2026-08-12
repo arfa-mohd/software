@@ -477,12 +477,6 @@ async function startWhatsAppAutoShareBroadcast() {
     if (progressBar) progressBar.style.width = "40%";
     if (progressText) progressText.textContent = `Dispatching messages via Meta Cloud API (${selectedClients.length} clients)...`;
 
-    // Immediately mark clients as sent in UI console
-    selectedClients.forEach((client, idx) => {
-      markWaClientAsSent(client.phone);
-      logWaBroadcastConsole(`✅ [${idx + 1}/${selectedClients.length}] Dispatched via Meta API to ${client.name} (${client.formattedPhone}) — SENT`);
-    });
-
     try {
       const payload = {
         title: campaignTitle,
@@ -497,20 +491,24 @@ async function startWhatsAppAutoShareBroadcast() {
 
       const apiEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/whatsapp/send_bulk_campaign") : "/api/whatsapp/send_bulk_campaign";
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      fetch(apiEndpoint, {
+      const res = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      }).then(r => {
-        clearTimeout(timeoutId);
-        return r.json();
-      }).catch(err => {
-        console.warn("API dispatch background notice:", err);
+        body: JSON.stringify(payload)
       });
+
+      const data = await res.json();
+      if (data && Array.isArray(data.clients)) {
+        data.clients.forEach((item, idx) => {
+          if (item.status === 'Sent' || item.status === 'Meta HTTP 200') {
+            markWaClientAsSent(item.phone);
+            logWaBroadcastConsole(`✅ [${idx + 1}/${selectedClients.length}] Meta API Dispatched to ${item.name} (${formatIndianPhone(item.phone)}) — SENT`);
+          } else {
+            const errStr = item.meta_res ? (item.meta_res.error ? item.meta_res.error.message : JSON.stringify(item.meta_res)) : item.status;
+            logWaBroadcastConsole(`⚠️ [${idx + 1}/${selectedClients.length}] Meta API Response for ${item.name}: ${errStr}`);
+          }
+        });
+      }
 
       if (progressBar) progressBar.style.width = "100%";
       if (progressText) progressText.textContent = `🎉 Campaign Delivered to all ${selectedClients.length} clients!`;
