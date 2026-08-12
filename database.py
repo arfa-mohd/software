@@ -547,9 +547,12 @@ def seed_data(cursor):
 
     # 5. Seed Patients EMR Data
     patients = [
-        ("David Miller", 42, "Male", "9876543215", "david.m@example.com", "O+", "Penicillin", "Star Health Insurance", "SHI-908123", "Mild hypertension managed with Metoprolol."),
-        ("Samantha Reed", 29, "Female", "9876587654", "sam.reed@example.com", "A+", "Dust / Pollen", "HDFC ERGO Health", "HDF-441029", "No chronic conditions."),
-        ("Arthur Pendelton", 61, "Male", "9876599122", "arthur.p@example.com", "B+", "Sulfa Drugs", "Care Health Insurance", "CHI-102938", "Type 2 Diabetes mellitus under medication.")
+      ("faid", 28, "Male", "6385634565", "faid@example.com", "O+", "None", "Star Health Insurance", "SHI-883921", "OPD & WhatsApp Patient."),
+      ("niyamath", 31, "Male", "7397065324", "niyamath@example.com", "A+", "Dust Allergy", "HDFC ERGO Health", "HDF-992012", "OPD Consultation."),
+      ("Primary Client (Test)", 30, "Male", "6379558054", "test.primary@example.com", "O+", "None", "Star Health", "SHI-000001", "Featured Test Client."),
+      ("David Miller", 42, "Male", "9876543215", "david.m@example.com", "O+", "Penicillin", "Star Health Insurance", "SHI-908123", "Mild hypertension managed with Metoprolol."),
+      ("Samantha Reed", 29, "Female", "9876587654", "sam.reed@example.com", "A+", "Dust / Pollen", "HDFC ERGO Health", "HDF-441029", "No chronic conditions."),
+      ("Arthur Pendelton", 61, "Male", "9876599122", "arthur.p@example.com", "B+", "Sulfa Drugs", "Care Health Insurance", "CHI-102938", "Type 2 Diabetes mellitus under medication.")
     ]
     cursor.executemany(
         '''INSERT INTO patients 
@@ -562,6 +565,18 @@ def seed_data(cursor):
 
     # 6. Seed Appointments
     appointments = [
+        ("AURA-1001", "faid", 28, "Male", "6385634565", "faid@example.com", 1, "Dr. Rajesh Kumar", "Cardiology",
+         today.strftime("%Y-%m-%d"), "10:00 AM", "General Consultation & Health Checkup", "ROUTINE", 1,
+         "Scheduled", today.strftime("%Y-%m-%d %H:%M"), "Routine health checkup scheduled.", "Paid", 1500.00, "Room 101", "WhatsApp"),
+
+        ("AURA-1002", "niyamath", 31, "Male", "7397065324", "niyamath@example.com", 7, "Dr. James Wilson", "General Medicine",
+         today.strftime("%Y-%m-%d"), "11:30 AM", "General OPD Consultation", "ROUTINE", 1,
+         "Scheduled", today.strftime("%Y-%m-%d %H:%M"), "OPD Reservation.", "Paid", 800.00, "Room 102", "OPD Reservation"),
+
+        ("AURA-1003", "Primary Client (Test)", 30, "Male", "6379558054", "test.primary@example.com", 1, "Dr. Rajesh Kumar", "Cardiology",
+         today.strftime("%Y-%m-%d"), "01:00 PM", "Priority Test Consultation", "ROUTINE", 1,
+         "Scheduled", today.strftime("%Y-%m-%d %H:%M"), "Primary Test Client.", "Paid", 1500.00, "Room 103", "Featured Test"),
+
         ("AURA-8821", "David Miller", 42, "Male", "9876543215", "david.m@example.com", 1, "Dr. Rajesh Kumar", "Cardiology",
          today.strftime("%Y-%m-%d"), "10:00 AM", "Tightness in chest, shortness of breath on exertion.", "HIGH PRIORITY", 3,
          "Completed", today.strftime("%Y-%m-%d %H:%M"), "ECG performed. Mild sinus tachycardia. Prescribed Beta-Blocker and advised rest.",
@@ -585,6 +600,10 @@ def seed_data(cursor):
 
     # 6b. Seed Real WhatsApp Message Log Threads in DB
     wa_msgs = [
+        ("6385634565", "faid", "patient", "Hello, appointment confirmation for health checkup", "08:30 AM"),
+        ("6385634565", "faid", "bot", "🏥 Welcome faid! Your health checkup is confirmed with Dr. Rajesh Kumar.", "08:31 AM"),
+        ("7397065324", "niyamath", "patient", "Hi OPD appointment required", "09:10 AM"),
+        ("7397065324", "niyamath", "bot", "🏥 Welcome niyamath! Your OPD consultation is confirmed.", "09:11 AM"),
         ("9876543215", "David Miller", "patient", "enaku fever 3 days ah iruku", "08:58 AM"),
         ("9876543215", "David Miller", "bot", "🏥 *Welcome to AuraCare AI Health Assistant!*\nBased on your symptoms ('enaku fever 3 days ah iruku'), I recommend General Medicine (Dr. James Wilson).\nWould you like me to book an appointment tomorrow at 10:00 AM? Reply 'YES' to confirm.", "08:59 AM"),
         ("9876543215", "David Miller", "patient", "YES", "09:00 AM"),
