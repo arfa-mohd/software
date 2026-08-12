@@ -11,9 +11,9 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp Automation"])
 
-# Meta Credentials from Environment Variables
+# Meta Credentials from Environment Variables or User Provided Keys
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID", "1213160175221250")
-WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "EAArlmq3GcaYBSLDFLZAiBRGrRToRb6Fq4y5FfqtfQFOZCzC0eDvHOJZB2jhpeCkbIjMRdmUyqVvsbO595HRKp62nAUsz5kQ17IzTPTZAw7jkw0MPG4uEZCkQSU17KQeke1qrZCnyixoRRhMHZBF3excgz7ZA1etJVWbkawd6cBL1NM0OV3PrqYhu5NgZBnIP4uZAN4W3PoCZBGaHpAOqb3avHNC35pevJOOeHln0XjaYZCCZCc4pC9sGepW09qFBIUgVAZAll2aAfCQie7jlGMF9PNCZAiHwUso")
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "EAArlmq3GcaYBSE3FNhMpxYKC8izLzFZBQOdDXxDckdv8wUe0wFxzmOoF3cKYS2Nrxyj8H4GxottV7by2iUCcNjoASTJQXrKRKIPecm8oncBMiu4t26GYiRCZAL1CfY049QkmH0ZAlFYgEPLh3XuuOwObqrAZBlFkZBNZAiyB9bP1MBsZCmdqGZBrlZBkLlNW7ZAi6BBAjUaNPNCqpHAmfym00uIoiWGIoA7ZCKtmfoyJq0SVekNEZC7yZBvohKpGZCx1xSlVyU26JbUUTtNoWyprZCRjbkJOHHQ")
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "auracare_webhook_secret_123")
 
 @router.get("/chats")
