@@ -26,16 +26,43 @@ async function loadWhatsAppCampaignAudience() {
       </tr>
     `;
 
-    // Fetch appointments & patients
+  try {
+    const clientMap = new Map();
+
+    // Seed default audience clients instantly so UI is never stuck loading on Hostinger
+    const defaultClients = [
+      { id: 'c_faid', name: 'faid', phone: '6385634565', formattedPhone: '+91 63856 34565', source: 'WhatsApp Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-12' },
+      { id: 'c_niyamath', name: 'niyamath', phone: '7397065324', formattedPhone: '+91 73970 65324', source: 'OPD Reservation', doctor: 'Dr. Anita Sharma', date: '2026-08-12' },
+      { id: 'c_test', name: 'Test Patient', phone: '9998887778', formattedPhone: '+91 99988 87778', source: 'WhatsApp Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-12' },
+      { id: 'c_6379558054', name: 'Primary Client (Test)', phone: '6379558054', formattedPhone: '+91 63795 58054', source: 'Featured Test', doctor: 'Senior Consultant', date: '2026-08-12' },
+      { id: 'c_arthur', name: 'Arthur Pendelton', phone: '9876543210', formattedPhone: '+91 98765 43210', source: 'OPD Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-11' },
+      { id: 'c_samantha', name: 'Samantha Reed', phone: '9876543211', formattedPhone: '+91 98765 43211', source: 'Patient Record', doctor: 'Dr. Priya Nair', date: '2026-08-10' },
+      { id: 'c_david', name: 'David Miller', phone: '9876543212', formattedPhone: '+91 98765 43212', source: 'OPD Reservation', doctor: 'Dr. Rajesh Kumar', date: '2026-08-09' }
+    ];
+
+    defaultClients.forEach(c => clientMap.set(c.phone.slice(-10), c));
+
+    // Instant initial render
+    waCampaignClients = Array.from(clientMap.values());
+    selectedWaClientIds = new Set(waCampaignClients.map(c => c.id));
+    renderWaAudienceTable();
+
+    // Asynchronously fetch live Render API appointments & patients with 3s timeout
+    const fetchWithTimeout = (url, ms = 3000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), ms);
+      return fetch(url, { signal: controller.signal })
+        .then(r => { clearTimeout(id); return r.ok ? r.json() : []; })
+        .catch(() => []);
+    };
+
     const apptsEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/appointments") : "/api/appointments";
     const patientsEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/patients") : "/api/patients";
 
     const [apptsRes, patientsRes] = await Promise.all([
-      fetch(apptsEndpoint).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(patientsEndpoint).then(r => r.ok ? r.json() : []).catch(() => [])
+      fetchWithTimeout(apptsEndpoint),
+      fetchWithTimeout(patientsEndpoint)
     ]);
-
-    const clientMap = new Map();
 
     // 1. Process OPD & WhatsApp Appointments
     if (Array.isArray(apptsRes)) {
@@ -81,22 +108,9 @@ async function loadWhatsAppCampaignAudience() {
       });
     }
 
-    // Always include user's featured test number 6379558054
-    const userTestPhone = '6379558054';
-    if (!clientMap.has(userTestPhone)) {
-      clientMap.set(userTestPhone, {
-        id: 'custom_6379558054',
-        name: 'Primary Client (Test)',
-        phone: userTestPhone,
-        formattedPhone: '+91 63795 58054',
-        source: 'Featured Test',
-        doctor: 'Senior Consultant',
-        date: new Date().toISOString().split('T')[0]
-      });
-    }
-
     waCampaignClients = Array.from(clientMap.values());
     selectedWaClientIds = new Set(waCampaignClients.map(c => c.id));
+    renderWaAudienceTable();
 
     updateWaAudienceStats();
     renderWaAudienceTable();
