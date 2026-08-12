@@ -624,3 +624,10 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// Immediate & DOMReady Auto-Initialization
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadWhatsAppCampaignAudience);
+} else {
+  loadWhatsAppCampaignAudience();
+}
