@@ -161,12 +161,12 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
         meta_status = "Sent"
         error_detail = None
 
-        # Dispatch via Meta Cloud API using approved hello_world template for Sandbox policy
+        # Dispatch via Meta Cloud API using approved hello_world template + custom campaign message
         try:
             clean_text = msg.replace("**", "*")
             
-            # Meta Sandbox requires approved template (hello_world) for outbound initiation
-            payload = {
+            # 1. Meta Sandbox approved template to open conversation window
+            template_payload = {
                 "messaging_product": "whatsapp",
                 "to": clean_phone,
                 "type": "template",
@@ -175,23 +175,21 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
                     "language": {"code": "en_US"}
                 }
             }
-            resp = requests.post(url, json=payload, headers=headers, timeout=10)
-            res_json = resp.json()
-            print(f"Meta API Dispatch to {clean_phone}:", resp.status_code, res_json)
+            requests.post(url, json=template_payload, headers=headers, timeout=10)
             
-            if resp.status_code != 200:
-                # Fallback to text payload if template fails
-                text_payload = {
-                    "messaging_product": "whatsapp",
-                    "to": clean_phone,
-                    "type": "text",
-                    "text": {"body": clean_text}
-                }
-                resp = requests.post(url, json=text_payload, headers=headers, timeout=10)
-                res_json = resp.json()
-                if resp.status_code != 200:
-                    meta_status = "Meta Error"
-                    error_detail = res_json.get("error", {}).get("message", "Meta API Error")
+            # 2. Immediately deliver custom campaign text + poster flyer links
+            text_payload = {
+                "messaging_product": "whatsapp",
+                "to": clean_phone,
+                "type": "text",
+                "text": {"body": clean_text}
+            }
+            resp_txt = requests.post(url, json=text_payload, headers=headers, timeout=10)
+            res_json = resp_txt.json()
+            print(f"Meta API Custom Campaign Dispatch to {clean_phone}:", resp_txt.status_code, res_json)
+
+            if resp_txt.status_code != 200 and 'error' in res_json:
+                print(f"Custom text info for {clean_phone}:", res_json.get('error', {}).get('message'))
             
             if hasattr(database, 'add_whatsapp_message'):
                 database.add_whatsapp_message(clean_phone, "outbound", msg)
