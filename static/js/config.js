@@ -6,7 +6,7 @@ const CONFIG = {
   // Example: 'https://auracare-api.onrender.com'
   API_BASE_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? '' 
-    : (window.RENDER_API_URL || 'https://auracare-api.onrender.com')
+    : (window.RENDER_API_URL || 'https://software-1.onrender.com')
 };
 
 function getApiUrl(endpoint) {
