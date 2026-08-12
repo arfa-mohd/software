@@ -450,8 +450,60 @@ def init_db():
     )
     ''')
 
+    # Ensure faid, niyamath, 6379558054 are always present in the database on startup
+    ensure_featured_patients_exist(cursor)
+
     conn.commit()
     conn.close()
+
+def ensure_featured_patients_exist(cursor):
+    today = datetime.now()
+    now_str = today.strftime("%Y-%m-%d %H:%M:%S")
+    today_date = today.strftime("%Y-%m-%d")
+
+    # Required patient records
+    target_patients = [
+        ("faid", 28, "Male", "6385634565", "faid@example.com", "O+", "None", "Star Health Insurance", "SHI-883921", "OPD & WhatsApp Patient."),
+        ("niyamath", 31, "Male", "7397065324", "niyamath@example.com", "A+", "Dust Allergy", "HDFC ERGO Health", "HDF-992012", "OPD Consultation."),
+        ("Primary Client (Test)", 30, "Male", "6379558054", "test.primary@example.com", "O+", "None", "Star Health", "SHI-000001", "Featured Test Client.")
+    ]
+
+    for p in target_patients:
+        try:
+            cursor.execute("SELECT id FROM patients WHERE phone = ?", (p[3],))
+            if not cursor.fetchone():
+                cursor.execute(
+                    "INSERT INTO patients (name, age, gender, phone, email, blood_group, allergies, insurance_provider, policy_no, medical_history) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    p
+                )
+        except Exception as e:
+            print(f"Error seeding patient {p[0]}:", e)
+
+    # Required appointment records
+    target_appts = [
+        ("AURA-1001", "faid", 28, "Male", "6385634565", "faid@example.com", 1, "Dr. Rajesh Kumar", "Cardiology",
+         today_date, "10:00 AM", "General Health Checkup & OPD Consultation", "ROUTINE", 1,
+         "Scheduled", now_str, "Routine health checkup scheduled.", "Paid", 1500.00, "Room 101", "WhatsApp"),
+
+        ("AURA-1002", "niyamath", 31, "Male", "7397065324", "niyamath@example.com", 7, "Dr. James Wilson", "General Medicine",
+         today_date, "11:30 AM", "General OPD Consultation", "ROUTINE", 1,
+         "Scheduled", now_str, "OPD Reservation.", "Paid", 800.00, "Room 102", "OPD Reservation"),
+
+        ("AURA-1003", "Primary Client (Test)", 30, "Male", "6379558054", "test.primary@example.com", 1, "Dr. Rajesh Kumar", "Cardiology",
+         today_date, "01:00 PM", "Priority Test Consultation", "ROUTINE", 1,
+         "Scheduled", now_str, "Primary Test Client.", "Paid", 1500.00, "Room 103", "Featured Test")
+    ]
+
+    for a in target_appts:
+        try:
+            cursor.execute("SELECT id FROM appointments WHERE patient_phone = ? OR booking_code = ?", (a[4], a[0]))
+            if not cursor.fetchone():
+                cursor.execute(
+                    "INSERT INTO appointments (booking_code, patient_name, patient_age, patient_gender, patient_phone, patient_email, doctor_id, doctor_name, department_name, appointment_date, time_slot, symptoms, triage_level, urgency_score, status, created_at, consultation_notes, payment_status, payment_amount, room_no, booking_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    a
+                )
+        except Exception as e:
+            print(f"Error seeding appt {a[1]}:", e)
 
 def seed_data(cursor):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
