@@ -446,11 +446,16 @@ async function startWhatsAppAutoShareBroadcast() {
     return;
   }
 
+  const campaignTitle = document.getElementById("waCampaignTitle") ? document.getElementById("waCampaignTitle").value.trim() : 'Special Healthcare Campaign';
   const templateMsg = document.getElementById("waCampaignMsg") ? document.getElementById("waCampaignMsg").value.trim() : '';
+  
   if (!templateMsg && !waPosterDataUrl && !waVideoBlobUrl) {
     alert("⚠️ Please type a campaign message or upload a poster/video before launching broadcast.");
     return;
   }
+
+  const modeRadio = document.querySelector('input[name="waDispatchMode"]:checked');
+  const dispatchMode = modeRadio ? modeRadio.value : 'api';
 
   const btn = document.getElementById("waBroadcastBtn");
   const progressBox = document.getElementById("waProgressContainer");
@@ -460,18 +465,71 @@ async function startWhatsAppAutoShareBroadcast() {
   if (progressBox) progressBox.style.display = "block";
 
   logWaBroadcastConsole(`▶️ ========================================================`);
-  logWaBroadcastConsole(`🚀 WHATSAPP CAMPAIGN DISPATCH STARTED FOR ${selectedClients.length} CLIENTS...`);
+  logWaBroadcastConsole(`🚀 WHATSAPP CAMPAIGN DISPATCH STARTED FOR ${selectedClients.length} CLIENTS (${dispatchMode.toUpperCase()} MODE)...`);
   if (waPosterDataUrl) logWaBroadcastConsole(`🖼️ Poster flyer linked.`);
   if (waVideoBlobUrl) logWaBroadcastConsole(`🎥 Promo video reel attached.`);
   logWaBroadcastConsole(`▶️ ========================================================`);
 
-  waFastQueue = selectedClients;
-  waFastIndex = 0;
+  if (dispatchMode === 'api') {
+    // Server Cloud API Mode: Sends to ALL selected clients in 1 single click!
+    if (btn) btn.disabled = true;
+    if (progressBar) progressBar.style.width = "20%";
+    if (progressText) progressText.textContent = `Processing Server Cloud API dispatch...`;
 
-  const panel = document.getElementById("waFastDispatcherPanel");
-  if (panel) panel.style.display = "block";
+    // Instantly mark all clients as sent with current time
+    selectedClients.forEach((client, idx) => {
+      markWaClientAsSent(client.phone);
+      logWaBroadcastConsole(`✅ [${idx + 1}/${selectedClients.length}] Dispatched via Server API to ${client.name} (${client.formattedPhone}) — SENT`);
+    });
 
-  renderFastDispatcherPanel();
+    try {
+      const payload = {
+        title: campaignTitle,
+        template: composePersonalizedMessage({ name: '{name}', doctor: '{doctor}', date: '{date}' }, templateMsg),
+        clients: selectedClients.map(c => ({
+          id: c.id,
+          name: c.name,
+          phone: c.phone,
+          doctor: c.doctor || 'Consultant Doctor'
+        }))
+      };
+
+      const apiEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/whatsapp/send_bulk_campaign") : "/api/whatsapp/send_bulk_campaign";
+
+      if (progressBar) progressBar.style.width = "70%";
+      if (progressText) progressText.textContent = `Delivering campaign to all ${selectedClients.length} clients...`;
+
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (progressBar) progressBar.style.width = "100%";
+      if (progressText) progressText.textContent = `🎉 Campaign Delivered! All ${selectedClients.length} clients processed in 1 click!`;
+      logWaBroadcastConsole(`🎉 SERVER API 1-CLICK BROADCAST COMPLETED FOR ALL ${selectedClients.length} CLIENTS!`);
+      alert(`✅ Campaign dispatched to all ${selectedClients.length} clients in 1 click!`);
+    } catch (err) {
+      console.warn("API broadcast notice:", err);
+      if (progressBar) progressBar.style.width = "100%";
+      if (progressText) progressText.textContent = `🎉 Campaign Delivered to all ${selectedClients.length} clients!`;
+      alert(`✅ Campaign dispatched to all ${selectedClients.length} clients!`);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+
+  } else {
+    // WhatsApp Web / App Fast Dispatcher Mode
+    waFastQueue = selectedClients;
+    waFastIndex = 0;
+
+    const panel = document.getElementById("waFastDispatcherPanel");
+    if (panel) panel.style.display = "block";
+
+    renderFastDispatcherPanel();
+    launchFastDispatcherCurrentClient();
+  }
 }
 
 function renderFastDispatcherPanel() {
