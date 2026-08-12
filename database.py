@@ -23,12 +23,21 @@ class DictRowWrapper:
         return key in self._d
 
 class PgCursorAdapter:
-    def __init__(self, pg_cursor):
+    def __init__(self, pg_cursor, pg_conn=None):
         self.cursor = pg_cursor
+        self.conn = pg_conn
 
     def execute(self, query, params=()):
         pg_query = query.replace('?', '%s').replace('AUTOINCREMENT', '')
-        self.cursor.execute(pg_query, params)
+        try:
+            self.cursor.execute(pg_query, params)
+        except Exception as e:
+            if self.conn:
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
+            raise e
         return self
 
     def fetchone(self):
@@ -46,6 +55,11 @@ class PgCursorAdapter:
             res = self.cursor.fetchone()
             return list(res.values())[0] if res else None
         except Exception:
+            if self.conn:
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
             return None
 
 class PgConnAdapter:
@@ -53,13 +67,25 @@ class PgConnAdapter:
         self.conn = pg_conn
 
     def cursor(self):
-        return PgCursorAdapter(self.conn.cursor())
+        return PgCursorAdapter(self.conn.cursor(), self.conn)
 
     def commit(self):
-        self.conn.commit()
+        try:
+            self.conn.commit()
+        except Exception:
+            pass
+
+    def rollback(self):
+        try:
+            self.conn.rollback()
+        except Exception:
+            pass
 
     def close(self):
-        self.conn.close()
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
     def execute(self, query, params=()):
         c = self.cursor()
@@ -200,7 +226,10 @@ def init_db():
     try:
         cursor.execute("ALTER TABLE appointments ADD COLUMN booking_source TEXT DEFAULT 'Manual'")
     except Exception:
-        pass
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
     # 7. Prescriptions Table
     cursor.execute('''
@@ -271,7 +300,10 @@ def init_db():
     try:
         cursor.execute("ALTER TABLE whatsapp_sessions ADD COLUMN triage_data TEXT DEFAULT '{}'")
     except Exception:
-        pass
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
     # 10b. Real WhatsApp Message History Log Table (Database Persistence)
     cursor.execute('''
