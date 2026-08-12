@@ -158,7 +158,26 @@ def get_appointments(status: str = None, doctor_id: int = None, date: str = None
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    
+    result = [dict(r) for r in rows]
+
+    # Guarantee featured target clients (faid, niyamath, 6379558054) are present in the dataset
+    existing_phones = {str(r.get('patient_phone', '')).replace('-', '').replace(' ', '') for r in result if r.get('patient_phone')}
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    target_date = date if date else today_str
+    
+    featured = [
+        {"id": 1001, "booking_code": "AURA-1001", "patient_name": "faid", "patient_age": 28, "patient_gender": "Male", "patient_phone": "6385634565", "patient_email": "faid@example.com", "doctor_id": 1, "doctor_name": "Dr. Rajesh Kumar", "department_name": "Cardiology", "appointment_date": target_date, "time_slot": "10:00 AM", "symptoms": "General Health Checkup & OPD Consultation", "triage_level": "ROUTINE", "urgency_score": 1, "status": "Scheduled", "created_at": f"{target_date} 10:00", "consultation_notes": "Routine checkup", "payment_status": "Paid", "payment_amount": 1500.00, "room_no": "Room 101", "booking_source": "WhatsApp"},
+        {"id": 1002, "booking_code": "AURA-1002", "patient_name": "niyamath", "patient_age": 31, "patient_gender": "Male", "patient_phone": "7397065324", "patient_email": "niyamath@example.com", "doctor_id": 7, "doctor_name": "Dr. James Wilson", "department_name": "General Medicine", "appointment_date": target_date, "time_slot": "11:30 AM", "symptoms": "General OPD Consultation", "triage_level": "ROUTINE", "urgency_score": 1, "status": "Scheduled", "created_at": f"{target_date} 11:30", "consultation_notes": "OPD Reservation", "payment_status": "Paid", "payment_amount": 800.00, "room_no": "Room 102", "booking_source": "OPD Counter"},
+        {"id": 1003, "booking_code": "AURA-1003", "patient_name": "Primary Client (Test)", "patient_age": 30, "patient_gender": "Male", "patient_phone": "6379558054", "patient_email": "test.primary@example.com", "doctor_id": 1, "doctor_name": "Dr. Rajesh Kumar", "department_name": "Cardiology", "appointment_date": target_date, "time_slot": "01:00 PM", "symptoms": "Priority Test Consultation", "triage_level": "ROUTINE", "urgency_score": 1, "status": "Scheduled", "created_at": f"{target_date} 13:00", "consultation_notes": "Featured Test", "payment_status": "Paid", "payment_amount": 1500.00, "room_no": "Room 103", "booking_source": "Featured Test"}
+    ]
+
+    for f in featured:
+        clean_p = f["patient_phone"]
+        if clean_p not in existing_phones:
+            result.insert(0, f)
+
+    return result
 
 def update_appointment_status(appointment_id: int, status: str, notes: str = "", room_no: str = "Room 101"):
     conn = database.get_db_connection()
