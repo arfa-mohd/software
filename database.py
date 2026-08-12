@@ -8,12 +8,83 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hospital_local.db')
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+class DictRowWrapper:
+    def __init__(self, d):
+        self._d = dict(d) if d else {}
+    def __getitem__(self, key):
+        return self._d.get(key)
+    def get(self, key, default=None):
+        return self._d.get(key, default)
+    def keys(self):
+        return self._d.keys()
+    def __contains__(self, key):
+        return key in self._d
+
+class PgCursorAdapter:
+    def __init__(self, pg_cursor):
+        self.cursor = pg_cursor
+
+    def execute(self, query, params=()):
+        pg_query = query.replace('?', '%s').replace('AUTOINCREMENT', '')
+        self.cursor.execute(pg_query, params)
+        return self
+
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        return DictRowWrapper(row) if row else None
+
+    def fetchall(self):
+        rows = self.cursor.fetchall()
+        return [DictRowWrapper(r) for r in rows] if rows else []
+
+    @property
+    def lastrowid(self):
+        try:
+            self.cursor.execute("SELECT LASTVAL()")
+            res = self.cursor.fetchone()
+            return list(res.values())[0] if res else None
+        except Exception:
+            return None
+
+class PgConnAdapter:
+    def __init__(self, pg_conn):
+        self.conn = pg_conn
+
+    def cursor(self):
+        return PgCursorAdapter(self.conn.cursor())
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+    def execute(self, query, params=()):
+        c = self.cursor()
+        c.execute(query, params)
+        return c
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    if DATABASE_URL:
+        try:
+            import psycopg2
+            import psycopg2.extras
+            db_url = DATABASE_URL.replace("postgres://", "postgresql://") if DATABASE_URL.startswith("postgres://") else DATABASE_URL
+            raw_conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+            return PgConnAdapter(raw_conn)
+        except Exception as e:
+            print("PostgreSQL connection error, falling back to local SQLite:", e)
+            conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            return conn
+    else:
+        conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
