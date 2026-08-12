@@ -139,6 +139,15 @@ class BulkCampaignRequest(BaseModel):
 def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
     """Direct Server-Side API to Send WhatsApp Campaign to ALL Clients in 1 Click"""
     sent_list = []
+    phone_id = os.getenv("PHONE_NUMBER_ID", PHONE_NUMBER_ID)
+    token = os.getenv("WHATSAPP_TOKEN", WHATSAPP_TOKEN)
+    
+    url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
     for c in req.clients:
         clean_phone = c.phone.replace("+", "").replace(" ", "").replace("-", "")
         if len(clean_phone) == 10:
@@ -149,19 +158,39 @@ def send_bulk_whatsapp_campaign(req: BulkCampaignRequest):
         msg = msg.replace("{doctor}", c.doctor or "Consultant Doctor")
         msg = msg.replace("{hospital}", "AuraCare Nexus Hospital")
         
-        # Dispatch via Meta Cloud API & Store in Database Log
+        meta_status = "Sent"
+        error_detail = None
+
+        # Dispatch via Meta Cloud API
         try:
-            send_meta_reply(clean_phone, msg)
+            clean_text = msg.replace("**", "*")
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": clean_phone,
+                "type": "text",
+                "text": {"body": clean_text}
+            }
+            resp = requests.post(url, json=payload, headers=headers, timeout=10)
+            res_json = resp.json()
+            print(f"Meta API Dispatch to {clean_phone}:", resp.status_code, res_json)
+            
+            if resp.status_code != 200:
+                meta_status = "Meta Error"
+                error_detail = res_json.get("error", {}).get("message", "Meta API Error")
+            
             if hasattr(database, 'add_whatsapp_message'):
                 database.add_whatsapp_message(clean_phone, "outbound", msg)
         except Exception as e:
             print(f"Error sending WhatsApp to {clean_phone}: {e}")
+            meta_status = "Failed"
+            error_detail = str(e)
         
         sent_list.append({
             "id": c.id,
             "phone": clean_phone,
             "name": c.name,
-            "status": "Sent"
+            "status": meta_status,
+            "error": error_detail
         })
 
     return {
