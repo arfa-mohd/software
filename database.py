@@ -412,6 +412,7 @@ def init_db():
         default_pages = [
             ('dashboard', 'Dashboard', 'Hospital Intelligence Overview', 'fas fa-th-large', 0, '[]', 1, ''),
             ('whatsapp', 'WhatsApp Patients', 'WhatsApp-Booked Patient Queue', 'fab fa-whatsapp', 0, '[]', 1, ''),
+            ('wa_broadcast', 'WhatsApp Campaign', 'Bulk Auto Share Poster & Video Campaign', 'fas fa-bullhorn', 0, '[]', 1, ''),
             ('queue', 'OPD Reservations', 'Live OPD Queue Board & Appointments', 'fas fa-calendar-alt', 0, '[]', 1, ''),
             ('prescriptions', 'E-Prescriptions', 'Digital Prescription Log', 'fas fa-file-prescription', 0, '[]', 1, ''),
             ('patients', 'Patient EMR', 'Electronic Medical Records', 'fas fa-users', 0, '[]', 1, ''),
@@ -426,6 +427,16 @@ def init_db():
             "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             default_pages
         )
+
+    # Ensure wa_broadcast page exists in custom_pages table
+    try:
+        cursor.execute("SELECT COUNT(*) FROM custom_pages WHERE key = 'wa_broadcast'")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute(
+                "INSERT INTO custom_pages (key, title, subtitle, icon, is_custom, columns_json, is_visible, table_name) VALUES ('wa_broadcast', 'WhatsApp Campaign', 'Bulk Auto Share Poster & Video Campaign', 'fas fa-bullhorn', 0, '[]', 1, '')"
+            )
+    except Exception as e:
+        print("Auto-seed wa_broadcast info:", e)
         
         # Create physical table for POS Billing
         cursor.execute('''

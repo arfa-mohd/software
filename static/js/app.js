@@ -327,6 +327,7 @@ async function loadSidebarMenu() {
     appPages = [
       { key: 'dashboard', title: 'Dashboard', subtitle: 'Hospital Intelligence Overview', icon: 'fas fa-th-large', is_custom: 0, is_visible: 1 },
       { key: 'whatsapp', title: 'WhatsApp Patients', subtitle: 'WhatsApp-Booked Patient Queue', icon: 'fab fa-whatsapp', is_custom: 0, is_visible: 1 },
+      { key: 'wa_broadcast', title: 'WhatsApp Campaign', subtitle: 'Bulk Auto Share Poster & Video Campaign', icon: 'fas fa-bullhorn', is_custom: 0, is_visible: 1 },
       { key: 'queue', title: 'OPD Reservations', subtitle: 'Live OPD Queue Board & Appointments', icon: 'fas fa-calendar-alt', is_custom: 0, is_visible: 1 },
       { key: 'prescriptions', title: 'E-Prescriptions', subtitle: 'Digital Prescription Log', icon: 'fas fa-file-prescription', is_custom: 0, is_visible: 1 },
       { key: 'patients', title: 'Patient EMR', subtitle: 'Electronic Medical Records', icon: 'fas fa-users', is_custom: 0, is_visible: 1 },

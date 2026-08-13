@@ -86,7 +86,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 def get_logo():
     logo_file = os.path.join(STATIC_DIR, "logo.jpg")
     if os.path.exists(logo_file):
-        return FileResponse(logo_file)
+        return FileResponse(logo_file, media_type="image/jpeg")
     return Response(status_code=404)
 
 @app.get("/")
