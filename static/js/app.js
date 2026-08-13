@@ -577,17 +577,24 @@ function switchView(viewId) {
       'payments': 'Revenue, Gateways & Financial Log',
       'admin': 'Manage staff, doctors, roles, user accounts, activity logs, attendance & security'
     };
-    
     let titleStr = titles[viewId] || 'Dashboard';
     let subtitleStr = subtitles[viewId] || '';
     if (page) {
       titleStr = page.title;
       subtitleStr = page.subtitle;
     }
-    titleEl.innerText = titleStr;
-    if (subEl) subEl.innerText = subtitleStr;
+    
+    // Hide the top bar header for wa_broadcast since it has its own integrated enterprise header
+    if (viewId === 'wa_broadcast') {
+      titleEl.style.display = 'none';
+      if (subEl) subEl.style.display = 'none';
+    } else {
+      titleEl.style.display = 'block';
+      if (subEl) subEl.style.display = 'block';
+      titleEl.innerText = titleStr;
+      if (subEl) subEl.innerText = subtitleStr;
+    }
   }
-
   closeSidebar();
 
   if (viewId === 'dashboard') {

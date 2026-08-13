@@ -35,6 +35,8 @@ async function loadWhatsAppCampaignAudience() {
   selectedWaClientIds = new Set(waCampaignClients.map(c => c.id));
   updateWaAudienceStats();
   renderWaAudienceTable();
+  const consoleBox = document.getElementById("waBroadcastLogConsole");
+  if (consoleBox) consoleBox.innerHTML = '';
   logWaBroadcastConsole('🚀 WHATSAPP CAMPAIGN STUDIO V99 READY — Select clients & launch broadcast.');
 
   // Asynchronously fetch live Render API appointments & patients with 3s timeout
