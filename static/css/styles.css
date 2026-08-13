@@ -4638,11 +4638,32 @@ body.dark-theme #view-wa_broadcast table td {
 }
 
 .brand-header img.sidebar-logo {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 8px !important;
+  display: block !important;
   box-shadow: 0 0 15px rgba(56, 182, 255, 0.4) !important;
   transition: transform 0.3s ease !important;
 }
 
 .brand-header img.sidebar-logo:hover {
-  transform: scale(1.05) rotate(2deg) !important;
+  transform: scale(1.08) rotate(2deg) !important;
+}
+
+/* Light Theme Ultra-Premium Cards & Broadcast Studio */
+body:not(.dark-theme) #view-wa_broadcast .card-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+body:not(.dark-theme) #view-wa_broadcast .stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid #25d366 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04) !important;
 }
 
