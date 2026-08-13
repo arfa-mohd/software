@@ -4588,3 +4588,61 @@ body.dark-theme #view-wa_broadcast table tr:hover {
   background: rgba(30, 41, 59, 0.5) !important;
 }
 
+/* ==========================================================================
+   ULTRA-PREMIUM GLASSMORPHISM & HIGH-END ENTERPRISE CRM DESIGN PACK
+   ========================================================================== */
+body.dark-theme {
+  background: radial-gradient(circle at 10% 20%, #0b1120 0%, #050811 90%) !important;
+}
+
+body.dark-theme .sidebar {
+  background: linear-gradient(180deg, #09172a 0%, #030a14 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-theme .card-box {
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+body.dark-theme .card-box:hover {
+  border-color: rgba(56, 182, 255, 0.3) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .stat-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.dark-theme #view-wa_broadcast .stat-card {
+  border-left: 4px solid #25d366 !important;
+}
+
+body.dark-theme #view-wa_broadcast table th {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #94a3b8 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.8px !important;
+}
+
+body.dark-theme #view-wa_broadcast table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.brand-header img.sidebar-logo {
+  box-shadow: 0 0 15px rgba(56, 182, 255, 0.4) !important;
+  transition: transform 0.3s ease !important;
+}
+
+.brand-header img.sidebar-logo:hover {
+  transform: scale(1.05) rotate(2deg) !important;
+}
+
