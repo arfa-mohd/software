@@ -1,7 +1,7 @@
 import os
 import requests
 from fastapi import APIRouter, Request, Response, Query
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 import schemas
 import database
