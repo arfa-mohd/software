@@ -1,8 +1,10 @@
 import sqlite3
+import os
 
 def fix_db():
     try:
-        conn = sqlite3.connect('hospital.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hospital_local.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
         # Check if wa_broadcast exists
@@ -13,9 +15,9 @@ def fix_db():
                 "VALUES ('wa_broadcast', 'WhatsApp Campaign', 'Bulk Auto Share Poster & Video Campaign', 'fas fa-bullhorn', 0, '[]', 1, '')"
             )
             conn.commit()
-            print("Successfully inserted wa_broadcast into DB!")
+            print("Successfully inserted wa_broadcast into hospital_local.db!")
         else:
-            print("wa_broadcast already exists in DB.")
+            print("wa_broadcast already exists in hospital_local.db.")
             
         conn.close()
     except Exception as e:
