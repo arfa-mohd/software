@@ -628,9 +628,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// Immediate & DOMReady Auto-Initialization
+// Immediate, DOMReady, Window Load & HashChange Auto-Initialization
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadWhatsAppCampaignAudience);
 } else {
   loadWhatsAppCampaignAudience();
 }
+
+window.addEventListener('load', () => {
+  if (window.location.hash === '#wa_broadcast' || localStorage.getItem('auracare_active_view') === 'wa_broadcast') {
+    loadWhatsAppCampaignAudience();
+  }
+});
+
+window.addEventListener('hashchange', () => {
+  if (window.location.hash === '#wa_broadcast') {
+    loadWhatsAppCampaignAudience();
+  }
+});

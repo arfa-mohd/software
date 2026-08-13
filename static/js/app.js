@@ -534,6 +534,10 @@ function switchView(viewId) {
   const targetSec = document.getElementById(`view-${viewId}`);
   if (targetSec) targetSec.classList.add("active");
 
+  if (viewId === 'wa_broadcast' && typeof loadWhatsAppCampaignAudience === 'function') {
+    setTimeout(loadWhatsAppCampaignAudience, 50);
+  }
+
   const titleEl = document.getElementById("currentPageTitle");
   const subEl = document.getElementById("currentPageSubtitle");
   if (titleEl) {
