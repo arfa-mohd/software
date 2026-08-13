@@ -17,27 +17,16 @@ async function loadWhatsAppCampaignAudience() {
 
   const clientMap = new Map();
 
-  // Seed default audience clients instantly so UI is never stuck loading on Hostinger
-  const defaultClients = [
-    { id: 'c_faid', name: 'faid', phone: '6385634565', formattedPhone: '+91 63856 34565', source: 'WhatsApp Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-12' },
-    { id: 'c_niyamath', name: 'niyamath', phone: '7397065324', formattedPhone: '+91 73970 65324', source: 'OPD Reservation', doctor: 'Dr. Anita Sharma', date: '2026-08-12' },
-    { id: 'c_test', name: 'Test Patient', phone: '9998887778', formattedPhone: '+91 99988 87778', source: 'WhatsApp Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-12' },
-    { id: 'c_6379558054', name: 'Primary Client (Test)', phone: '6379558054', formattedPhone: '+91 63795 58054', source: 'Featured Test', doctor: 'Senior Consultant', date: '2026-08-12' },
-    { id: 'c_arthur', name: 'Arthur Pendelton', phone: '9876543210', formattedPhone: '+91 98765 43210', source: 'OPD Patient', doctor: 'Dr. Rajesh Kumar', date: '2026-08-11' },
-    { id: 'c_samantha', name: 'Samantha Reed', phone: '9876543211', formattedPhone: '+91 98765 43211', source: 'Patient Record', doctor: 'Dr. Priya Nair', date: '2026-08-10' },
-    { id: 'c_david', name: 'David Miller', phone: '9876543212', formattedPhone: '+91 98765 43212', source: 'OPD Reservation', doctor: 'Dr. Rajesh Kumar', date: '2026-08-09' }
-  ];
-
-  defaultClients.forEach(c => clientMap.set(c.phone.slice(-10), c));
-
-  // Instant initial render (0ms delay)
-  waCampaignClients = Array.from(clientMap.values());
-  selectedWaClientIds = new Set(waCampaignClients.map(c => c.id));
-  updateWaAudienceStats();
-  renderWaAudienceTable();
+  // Clear console first
   const consoleBox = document.getElementById("waBroadcastLogConsole");
   if (consoleBox) consoleBox.innerHTML = '';
-  logWaBroadcastConsole('🚀 WHATSAPP CAMPAIGN STUDIO V99 READY — Select clients & launch broadcast.');
+  logWaBroadcastConsole('🚀 WHATSAPP CAMPAIGN STUDIO V99 READY — Fetching your saved WhatsApp & OPD Patients...');
+
+  // Initialize empty and wait for live data
+  waCampaignClients = [];
+  selectedWaClientIds = new Set();
+  updateWaAudienceStats();
+  renderWaAudienceTable();
 
   // Asynchronously fetch live Render API appointments & patients with 3s timeout
   try {
@@ -50,12 +39,8 @@ async function loadWhatsAppCampaignAudience() {
     };
 
     const apptsEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/appointments") : "/api/appointments";
-    const patientsEndpoint = typeof getApiUrl === 'function' ? getApiUrl("/api/patients") : "/api/patients";
 
-    const [apptsRes, patientsRes] = await Promise.all([
-      fetchWithTimeout(apptsEndpoint),
-      fetchWithTimeout(patientsEndpoint)
-    ]);
+    const apptsRes = await fetchWithTimeout(apptsEndpoint);
 
     // 1. Process OPD & WhatsApp Appointments
     if (Array.isArray(apptsRes)) {
@@ -73,28 +58,6 @@ async function loadWhatsAppCampaignAudience() {
               source: a.booking_source === 'WhatsApp' ? 'WhatsApp' : 'OPD Reservation',
               doctor: a.doctor_name || 'Consultant Physician',
               date: a.appointment_date || new Date().toISOString().split('T')[0]
-            });
-          }
-        }
-      });
-    }
-
-    // 2. Process Patients Database
-    if (Array.isArray(patientsRes)) {
-      patientsRes.forEach(p => {
-        const rawPhone = (p.phone || p.mobile_number || p.mobile || '').trim();
-        const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
-        if (cleanPhone.length >= 10) {
-          const key = cleanPhone.slice(-10);
-          if (!clientMap.has(key)) {
-            clientMap.set(key, {
-              id: 'patient_' + (p.id || Math.random().toString(36).substr(2, 9)),
-              name: p.name || p.patient_name || 'Valued Patient',
-              phone: cleanPhone,
-              formattedPhone: formatIndianPhone(cleanPhone),
-              source: 'Patient Record',
-              doctor: p.doctor_name || 'Medical Specialist',
-              date: p.created_at ? p.created_at.split('T')[0] : 'Active'
             });
           }
         }
